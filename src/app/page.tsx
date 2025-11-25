@@ -6,4 +6,4 @@ export default function Home() {
       <p className="mt-4">Campaign site is LIVE ✅</p>
     </main>
   );
-}
+}// redeploy trigger
