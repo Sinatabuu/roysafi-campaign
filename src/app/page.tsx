@@ -1,6 +1,7 @@
 
 "use client";
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 // Carousel Data
 const carouselItems = [
@@ -101,16 +102,19 @@ export default function Home() {
           </p>
         </div>
         
-        <div className="bg-gray-100 p-4 sm:p-6 rounded-xl shadow-2xl">
-          <img
-            src="/image_94753b.jpg" // Using the uploaded map image file name
-            alt="GIS Land Cover Map of Roysambu Constituency showing Electoral Areas and Settlement Density"
-            className="w-full h-auto rounded-lg border-2 border-[#2B27AB] object-contain"
+        <div className="bg-gray-100 p-4 sm:p-6 rounded-xl shadow-2xl relative">
+          <Image
+            src="/image_roymap.webp" // Ensure this image is in the public folder
+            alt="GIS Land Cover Map of Roysambu Constituency"
+            width={1200}
+            height={800}
+            className="rounded-lg border-2 border-[#2B27AB] object-contain"
           />
           <p className="text-sm text-gray-500 mt-4 text-center italic">
             Visualizing Roysambu's complexity: Electoral Areas, Settlement (Pink), and Green Spaces (Green/Yellow).
           </p>
         </div>
+
       </section>
 
       {/* Carousel Section */}
