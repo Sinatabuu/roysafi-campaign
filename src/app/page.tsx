@@ -104,7 +104,7 @@ export default function Home() {
         
         <div className="bg-gray-100 p-4 sm:p-6 rounded-xl shadow-2xl relative">
           <Image
-            src="/image_roymap.webp" // Ensure this image is in the public folder
+            src="roymap.webp" // Ensure this image is in the public folder
             alt="GIS Land Cover Map of Roysambu Constituency"
             width={1200}
             height={800}
