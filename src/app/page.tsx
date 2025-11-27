@@ -1,8 +1,4 @@
-// src/app/page.tsx
-'use client';
-
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
 
 // Carousel Data
 const carouselItems = [
@@ -76,19 +72,42 @@ export default function Home() {
             Empowering Roysambu Through Community Leadership, Education & Opportunity
           </p>
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-            <Link
-              href="/about"
+            <a
+              href="/about" // Using standard <a> tag instead of Next.js Link
               className="bg-white text-[#2B27AB] font-semibold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition"
             >
               Learn More
-            </Link>
-            <Link
-              href="/get-involved"
+            </a>
+            <a
+              href="/get-involved" // Using standard <a> tag instead of Next.js Link
               className="border-2 border-white text-white font-semibold py-3 px-8 rounded-full hover:bg-white/10 transition"
             >
               Get Involved
-            </Link>
+            </a>
           </div>
+        </div>
+      </section>
+
+      {/* Constituency Map Section - NEW! */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-[#2B27AB]">
+            Data-Driven Development: Our Constituency Map
+          </h2>
+          <p className="mt-3 text-gray-700 max-w-3xl mx-auto">
+            We use geographical data to ensure every ward—Roysambu, Kahawa West, Githurai, and all electoral areas—receives targeted, nuanced development planning, addressing infrastructure, settlement density, and resource allocation precisely.
+          </p>
+        </div>
+        
+        <div className="bg-gray-100 p-4 sm:p-6 rounded-xl shadow-2xl">
+          <img
+            src="/image_94753b.jpg" // Using the uploaded map image file name
+            alt="GIS Land Cover Map of Roysambu Constituency showing Electoral Areas and Settlement Density"
+            className="w-full h-auto rounded-lg border-2 border-[#2B27AB] object-contain"
+          />
+          <p className="text-sm text-gray-500 mt-4 text-center italic">
+            Visualizing Roysambu's complexity: Electoral Areas, Settlement (Pink), and Green Spaces (Green/Yellow).
+          </p>
         </div>
       </section>
 
@@ -110,28 +129,28 @@ export default function Home() {
           {/* Navigation Arrows */}
           <button
             onClick={prevSlide}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50"
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition z-10"
             aria-label="Previous"
           >
             ‹
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition z-10"
             aria-label="Next"
           >
             ›
           </button>
 
           {/* Indicators */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
             {carouselItems.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
                 className={`w-3 h-3 rounded-full ${
                   idx === currentIndex ? 'bg-white' : 'bg-white/50'
-                }`}
+                } transition-colors`}
                 aria-label={`Go to slide ${idx + 1}`}
               />
             ))}
@@ -166,8 +185,8 @@ export default function Home() {
               </li>
             </ul>
           </div>
-          <div className="bg-gray-100 rounded-xl h-64 md:h-80 flex items-center justify-center">
-            <span className="text-gray-500">📸 Community Event Photo</span>
+          <div className="bg-gray-100 rounded-xl h-64 md:h-80 flex items-center justify-center shadow-inner">
+            <span className="text-gray-500">📸 Community Event Photo Placeholder</span>
           </div>
         </div>
       </section>
@@ -183,11 +202,11 @@ export default function Home() {
             {testimonials.map((t, i) => (
               <div
                 key={i}
-                className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+                className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 transform hover:scale-[1.02] transition duration-300"
               >
                 <p className="italic text-gray-800">“{t.content}”</p>
                 <div className="mt-4 flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-[#52C4CF] flex items-center justify-center text-white font-bold">
+                  <div className="w-10 h-10 rounded-full bg-[#52C4CF] flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                     {t.name.charAt(0)}
                   </div>
                   <div className="ml-3">
@@ -208,14 +227,14 @@ export default function Home() {
           <p className="mt-4 max-w-2xl mx-auto">
             Your contribution helps fund TVET kits, mentorship programs, and community initiatives in Roysambu.
           </p>
-          <Link
+          <a
             href="https://paypal.me/roysafi" // 🔁 Replace with your M-Pesa Paybill, Chapa, or fundraising link
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-block bg-[#52C4CF] text-[#2B27AB] font-bold py-4 px-10 rounded-full text-lg hover:bg-[#42b3bf] transition shadow-lg"
+            className="mt-8 inline-block bg-[#52C4CF] text-[#2B27AB] font-bold py-4 px-10 rounded-full text-lg hover:bg-[#42b3bf] transition shadow-lg transform hover:scale-105"
           >
             🎯 Donate Now
-          </Link>
+          </a>
           <p className="mt-4 text-sm opacity-80">
             Transparent. Accountable. Community-driven.
           </p>
