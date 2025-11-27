@@ -1,8 +1,5 @@
-
-"use client";
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-
+import Image from "next/image";
 // Carousel Data
 const carouselItems = [
   {
@@ -44,6 +41,82 @@ const testimonials = [
   },
 ];
 
+// Mock data for the interactive map overlay
+const wardsData = [
+    { name: 'Roysambu Ward', stats: 'Infrastructure Priority: Roads', color: 'bg-red-500/80', position: 'top-[10%] left-[20%]' },
+    { name: 'Githurai Ward', stats: 'Key Focus: Digital Literacy Centers', color: 'bg-yellow-500/80', position: 'top-[30%] right-[10%]' },
+    { name: 'Kahawa West Ward', stats: 'Key Focus: Water & Sanitation', color: 'bg-green-500/80', position: 'bottom-[10%] left-[10%]' },
+    { name: 'Zimmerman', stats: 'Youth Engagement Score: High', color: 'bg-blue-500/80', position: 'top-[60%] left-[40%]' },
+];
+
+const InteractiveMap = () => {
+    const [activeWard, setActiveWard] = useState(wardsData[0]);
+
+    // This is the container for the map image and the transparent overlay.
+    return (
+        <div className="flex flex-col lg:flex-row gap-8">
+            {/* Map Visualization Area */}
+            <div className="relative w-full lg:w-3/4 aspect-[4/3] rounded-xl overflow-hidden shadow-2xl group border-4 border-[#2B27AB]">
+                
+
+            <div className="bg-gray-100 p-4 sm:p-6 rounded-xl shadow-2xl relative">
+              <Image
+                src="roymap.webp" // Ensure this image is in your public folder
+                alt="GIS Land Cover Map of Roysambu Constituency"
+                width={1200}
+                height={800}
+                className="rounded-lg border-2 border-[#2B27AB] object-contain"
+              />
+              <p className="text-sm text-gray-500 mt-4 text-center italic">
+                Visualizing Roysambu's complexity: Electoral Areas, Settlement (Pink), and Green Spaces (Green/Yellow).
+              </p>
+            </div>
+                
+                {/* --- Interactive Overlay Layer --- */}
+                {wardsData.map((ward, index) => (
+                    <div 
+                        key={index}
+                        className={`absolute ${ward.position} transition-all duration-300 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer 
+                            p-2 rounded-full text-white font-bold text-xs shadow-lg hover:z-20 hover:scale-110 
+                            ${ward.color} opacity-80 hover:opacity-100 ring-2 ring-white`}
+                        onMouseEnter={() => setActiveWard(ward)}
+                        onMouseLeave={() => setActiveWard(wardsData[0])} // Reset to a default state or last active
+                    >
+                        {ward.name.split(' ')[0]}
+                    </div>
+                ))}
+
+                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black/10 text-white font-extrabold text-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    Hover Over Areas for Data
+                </div>
+            </div>
+
+            {/* Data Display Panel */}
+            <div className="w-full lg:w-1/4 p-6 bg-gray-50 rounded-xl shadow-lg border border-gray-200">
+                <h3 className="text-xl font-bold text-[#2B27AB] border-b pb-2 mb-4">Ward Focus</h3>
+                
+                <div className="space-y-4">
+                    <p className="text-lg font-semibold text-gray-800">
+                        {activeWard.name}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                        <span className="font-medium">Primary Focus Area:</span> {activeWard.stats}
+                    </p>
+                    <div className="mt-4 pt-4 border-t border-gray-300">
+                        <h4 className="text-sm font-bold text-gray-700">Quick Stats (Mock Data)</h4>
+                        <ul className="text-xs text-gray-500 mt-2 space-y-1">
+                            <li>• Population Density: High</li>
+                            <li>• TVET Participation: 78%</li>
+                            <li>• Sanitation Index: 7/10</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
 export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -76,13 +149,13 @@ export default function Home() {
           </p>
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
             <a
-              href="/about" // Using standard <a> tag instead of Next.js Link
+              href="/about" 
               className="bg-white text-[#2B27AB] font-semibold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition"
             >
               Learn More
             </a>
             <a
-              href="/get-involved" // Using standard <a> tag instead of Next.js Link
+              href="/get-involved" 
               className="border-2 border-white text-white font-semibold py-3 px-8 rounded-full hover:bg-white/10 transition"
             >
               Get Involved
@@ -91,30 +164,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Constituency Map Section - NEW! */}
+      {/* Constituency Map Section - UPDATED TO INTERACTIVE COMPONENT */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-[#2B27AB]">
             Data-Driven Development: Our Constituency Map
           </h2>
-          <p className="mt-3 text-gray-700 max-w-3xl mx-auto">
-            We use geographical data to ensure every ward—Roysambu, Kahawa West, Githurai, and all electoral areas—receives targeted, nuanced development planning, addressing infrastructure, settlement density, and resource allocation precisely.
+          <p className="mt-3 text-gray-700 max-w-4xl mx-auto">
+            We use geographical data for targeted development. Hover over the areas on the map to see the unique priorities for each Roysambu ward, ensuring every area receives the specific resources it needs.
           </p>
         </div>
         
-        <div className="bg-gray-100 p-4 sm:p-6 rounded-xl shadow-2xl relative">
-          <Image
-            src="roymap.webp" // Ensure this image is in the public folder
-            alt="GIS Land Cover Map of Roysambu Constituency"
-            width={1200}
-            height={800}
-            className="rounded-lg border-2 border-[#2B27AB] object-contain"
-          />
-          <p className="text-sm text-gray-500 mt-4 text-center italic">
-            Visualizing Roysambu's complexity: Electoral Areas, Settlement (Pink), and Green Spaces (Green/Yellow).
-          </p>
-        </div>
+        <InteractiveMap />
 
+        <p className="text-sm text-gray-500 mt-8 text-center italic">
+          Visualizing Roysambu's complexity: Electoral Areas, Settlement (Pink), and Green Spaces (Green/Yellow).
+        </p>
       </section>
 
       {/* Carousel Section */}
