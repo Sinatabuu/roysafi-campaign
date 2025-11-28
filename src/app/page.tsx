@@ -96,6 +96,44 @@ export default function Home() {
 
         <WardMap />
       </section>
+      <section className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-16">
+  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+    <h3 className="text-xl sm:text-2xl font-bold text-[#2B27AB]">
+      Polling Stations as Community Hubs
+    </h3>
+    <p className="mt-2 text-sm sm:text-base text-gray-700">
+      We are using existing public data about polling stations in Roysambu to
+      plan future community services like free Wi-Fi, civic education, youth
+      programs, and emergency response hubs in every ward.
+    </p>
+    <p className="mt-2 text-xs sm:text-sm text-gray-500">
+      Polling stations are not just about elections — they are trusted, well-known
+      places close to where people live.
+    </p>
+    <div className="mt-4 flex flex-wrap gap-3">
+      <a
+        href="https://data.afro.co.ke/polling-stations/roysambu/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center rounded-full bg-[#2B27AB] px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-[#221f84] transition"
+      >
+        View Polling Stations Data (AfroData)
+      </a>
+      <a
+        href="https://data.afro.co.ke/polling-stations/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center rounded-full bg-white border border-[#2B27AB] px-4 py-2 text-xs sm:text-sm font-semibold text-[#2B27AB] hover:bg-[#2B27AB]/5 transition"
+      >
+        Explore Full Kenya Polling Stations Dataset
+      </a>
+    </div>
+    <p className="mt-3 text-[11px] sm:text-xs text-gray-500">
+      Data source: IEBC polling stations dataset, published on AfroData (CC BY 4.0).
+    </p>
+  </div>
+</section>
+
     </main>
   );
 }
