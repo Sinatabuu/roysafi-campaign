@@ -30,6 +30,12 @@ const wardsData: Ward[] = [
       "We aim for more reliable water access, modern public toilets, and organized waste collection points within walking distance.",
   },
   {
+    name: "Kahawa Ward",
+    stats: "Roads, security & clean estates.",
+    focus:
+      "We aim for more reliable road access, modern public wifi, and organized waste collection points within walking distance.",
+  },
+  {
     name: "Zimmerman",
     stats: "Youth engagement, creativity & safety.",
     focus:
