@@ -1,8 +1,18 @@
 // src/components/WardMap.tsx
 "use client";
 
-import React, { useState, useEffect, KeyboardEvent } from "react";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
+import React, {
+  useState,
+  useEffect,
+  KeyboardEvent,
+  useCallback,
+} from "react";
+import {
+  MapContainer,
+  TileLayer,
+  CircleMarker,
+  useMap,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 type Ward = {
@@ -56,10 +66,30 @@ const wardsData: Ward[] = [
   },
 ];
 
+// alias mapping so local slang still works
+const wardAliases: Record<string, string> = {
+  trm: "Roysambu Ward",
+  "trm drive": "Roysambu Ward",
+  seasons: "Roysambu Ward",
+  roysambu: "Roysambu Ward",
+
+  "githurai 44": "Githurai Ward",
+  "githurai 45": "Githurai Ward",
+  githurai: "Githurai Ward",
+
+  "kahawa west": "Kahawa West Ward",
+  "kahawa sukari": "Kahawa Ward",
+  "kahawa wendani": "Kahawa Ward",
+  kahawa: "Kahawa Ward",
+
+  zima: "Zimmerman",
+  zimmerman: "Zimmerman",
+};
+
 // relax Leaflet types for TS
 const AnyMapContainer: any = MapContainer;
 const AnyTileLayer: any = TileLayer;
-const AnyMarker: any = Marker;
+const AnyCircleMarker: any = CircleMarker;
 
 const FlyToWard: React.FC<{ ward: Ward }> = ({ ward }) => {
   const map = useMap();
@@ -73,33 +103,102 @@ const FlyToWard: React.FC<{ ward: Ward }> = ({ ward }) => {
   return null;
 };
 
-type BaseLayer = "streets" | "development";
+type BaseLayer = "streets" | "planning";
 
 const WardMap: React.FC = () => {
   const [activeWard, setActiveWard] = useState<Ward>(wardsData[0]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchStatus, setSearchStatus] = useState<string | null>(null);
   const [baseLayer, setBaseLayer] = useState<BaseLayer>("streets");
+  const [mapInstance, setMapInstance] = useState<any>(null);
+  const [searchLocation, setSearchLocation] = useState<{
+    lat: number;
+    lng: number;
+    label?: string;
+  } | null>(null);
 
-  const handleSearch = () => {
+  const handleLocate = useCallback(async () => {
     const term = searchTerm.trim().toLowerCase();
-    if (!term) return;
-
-    const match =
-      wardsData.find((w) => w.name.toLowerCase().includes(term)) || null;
-
-    if (match) {
-      setActiveWard(match);
-    } else {
-      // later we can add a toast; for now we silently do nothing
-      console.warn("No ward match for:", term);
+    if (!term) {
+      setSearchStatus("Type an estate, street, or ward name.");
+      return;
     }
-  };
+
+    // 1) Try direct ward name match
+    const wardMatch =
+      wardsData.find((w) => w.name.toLowerCase().includes(term)) || null;
+    if (wardMatch) {
+      setActiveWard(wardMatch);
+      setSearchLocation(null);
+      setSearchStatus(`Showing: ${wardMatch.name}`);
+      return;
+    }
+
+    // 2) Try aliases
+    const aliasKey = Object.keys(wardAliases).find((key) =>
+      term.includes(key)
+    );
+    if (aliasKey) {
+      const wardName = wardAliases[aliasKey];
+      const ward = wardsData.find((w) => w.name === wardName);
+      if (ward) {
+        setActiveWard(ward);
+        setSearchLocation(null);
+        setSearchStatus(`Showing: ${ward.name}`);
+        return;
+      }
+    }
+
+    // 3) Fallback to live geocoding (OpenStreetMap / Nominatim)
+    try {
+      setSearchStatus("Searching on the map…");
+
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        searchTerm
+      )}&countrycodes=ke&limit=1`;
+
+      const res = await fetch(url, {
+        headers: {
+          "Accept-Language": "en",
+        },
+      });
+
+      const data: any[] = await res.json();
+
+      if (!data || data.length === 0) {
+        setSearchStatus(
+          "No match found. Try another estate, landmark, or street."
+        );
+        setSearchLocation(null);
+        return;
+      }
+
+      const hit = data[0];
+      const lat = parseFloat(hit.lat);
+      const lng = parseFloat(hit.lon);
+      const label: string = hit.display_name || searchTerm;
+
+      setSearchLocation({ lat, lng, label });
+      setSearchStatus(`Showing: ${label}`);
+
+      if (mapInstance) {
+        mapInstance.flyTo([lat, lng], 17, { duration: 1.2 });
+      }
+    } catch (err) {
+      console.error("Geocode error:", err);
+      setSearchStatus("Search failed. Check your internet and try again.");
+      setSearchLocation(null);
+    }
+  }, [mapInstance, searchTerm]);
 
   const handleSearchKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      handleSearch();
+      void handleLocate();
     }
   };
+
+  const googleMapsUrl = `https://www.google.com/maps/@${activeWard.center[0]},${activeWard.center[1]},17z`;
+  const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${activeWard.center[0]},${activeWard.center[1]}`;
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
@@ -111,7 +210,7 @@ const WardMap: React.FC = () => {
           <div className="w-full sm:w-2/3 flex gap-2">
             <input
               type="text"
-              placeholder="Search your hood (e.g. Kahawa, Zimmerman, Githurai)..."
+              placeholder="Search your hood (TRM, Seasons, Githurai 44, Zimmerman, Kahawa…)"
               className="flex-1 rounded-full border border-gray-300 px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#2B27AB] focus:border-[#2B27AB]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -119,7 +218,7 @@ const WardMap: React.FC = () => {
             />
             <button
               type="button"
-              onClick={handleSearch}
+              onClick={() => void handleLocate()}
               className="whitespace-nowrap rounded-full bg-[#2B27AB] px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-md hover:bg-[#221f84] transition"
             >
               Locate
@@ -137,50 +236,87 @@ const WardMap: React.FC = () => {
                   : "bg-white text-[#2B27AB] border-[#2B27AB]/50 hover:bg-[#2B27AB]/10"
               }`}
             >
-              Streets View
+              Streets Map
             </button>
             <button
               type="button"
-              onClick={() => setBaseLayer("development")}
+              onClick={() => setBaseLayer("planning")}
               className={`px-3 py-1 rounded-full text-[10px] sm:text-xs border font-semibold transition ${
-                baseLayer === "development"
+                baseLayer === "planning"
                   ? "bg-[#2B27AB] text-white border-[#2B27AB]"
                   : "bg-white text-[#2B27AB] border-[#2B27AB]/50 hover:bg-[#2B27AB]/10"
               }`}
             >
-              Development View
+              Planning Map
             </button>
           </div>
         </div>
+
+        {/* Status line under search */}
+        {searchStatus && (
+          <p className="mb-2 text-[11px] sm:text-xs text-gray-600">
+            {searchStatus}
+          </p>
+        )}
 
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border-4 border-[#2B27AB] bg-gray-100">
           <AnyMapContainer
             center={activeWard.center}
             zoom={activeWard.zoom}
             scrollWheelZoom={true}
+            whenCreated={setMapInstance}
             className="absolute inset-0"
           >
+            {/* Base layer switch – now clearly different styles */}
             <AnyTileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url={
                 baseLayer === "streets"
                   ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  : "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
+                  : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
               }
             />
 
+            {/* Ward-based flyTo */}
             <FlyToWard ward={activeWard} />
 
+            {/* Ward markers as clean circles (no broken pin icons) */}
             {wardsData.map((ward) => (
-              <AnyMarker key={ward.name} position={ward.center} />
+              <AnyCircleMarker
+                key={ward.name}
+                center={ward.center}
+                radius={activeWard.name === ward.name ? 10 : 7}
+                pathOptions={{
+                  color:
+                    activeWard.name === ward.name ? "#2B27AB" : "#52C4CF",
+                  fillColor:
+                    activeWard.name === ward.name ? "#2B27AB" : "#52C4CF",
+                  fillOpacity: 0.8,
+                  weight: 2,
+                }}
+              />
             ))}
+
+            {/* Search hit marker */}
+            {searchLocation && (
+              <AnyCircleMarker
+                center={[searchLocation.lat, searchLocation.lng]}
+                radius={8}
+                pathOptions={{
+                  color: "#FF5722",
+                  fillColor: "#FF5722",
+                  fillOpacity: 0.85,
+                  weight: 2,
+                }}
+              />
+            )}
           </AnyMapContainer>
 
           {/* Overlay helper text */}
           <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-center">
             <span className="inline-flex items-center rounded-full bg-black/45 px-3 py-1 text-[10px] sm:text-xs text-white font-medium">
-              Pinch, zoom, and tap the ward buttons below to explore the 5-year
-              plan for your area.
+              Pinch, zoom, and use search + ward buttons to explore the plan
+              for your exact area.
             </span>
           </div>
         </div>
@@ -191,7 +327,11 @@ const WardMap: React.FC = () => {
             <button
               key={ward.name}
               type="button"
-              onClick={() => setActiveWard(ward)}
+              onClick={() => {
+                setActiveWard(ward);
+                setSearchLocation(null);
+                setSearchStatus(`Showing: ${ward.name}`);
+              }}
               className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold border transition
                 ${
                   activeWard.name === ward.name
@@ -227,7 +367,7 @@ const WardMap: React.FC = () => {
             {activeWard.focus}
           </p>
 
-          <div className="pt-3 border-t border-dashed border-gray-300 space-y-1">
+        <div className="pt-3 border-t border-dashed border-gray-300 space-y-1">
             <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
               Quick Impact Targets
             </h5>
@@ -244,6 +384,26 @@ const WardMap: React.FC = () => {
           These are priority directions for planning and consultation. Final
           projects will be co-created with residents, youth groups, churches,
           and local businesses in each ward.
+        </div>
+
+        {/* External map links */}
+        <div className="mt-4 flex flex-col gap-2">
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs sm:text-sm font-semibold text-white bg-[#2B27AB] rounded-full px-4 py-2 text-center hover:bg-[#221f84] transition"
+          >
+            Open {activeWard.name} in Google Maps
+          </a>
+          <a
+            href={streetViewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs sm:text-sm font-semibold text-[#2B27AB] bg-white border border-[#2B27AB] rounded-full px-4 py-2 text-center hover:bg-[#2B27AB]/5 transition"
+          >
+            Street View for this ward
+          </a>
         </div>
       </div>
     </div>
