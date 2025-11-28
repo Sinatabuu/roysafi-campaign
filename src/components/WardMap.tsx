@@ -343,9 +343,11 @@ const WardMap: React.FC = () => {
             <div className="text-[10px] mt-1">
               Type: {site.type === "ground" ? "Field / Ground" : site.type}
             </div>
+
+            {/* Show when we are using an approximate location */}
             {site.lat === undefined && site.lng === undefined && (
               <div className="text-[9px] text-orange-600 mt-1">
-                Approximate location (using ward center) – GPS to be refined.
+                Approximate location (using ward center). GPS to be refined.
               </div>
             )}
           </div>
