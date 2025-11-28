@@ -1,113 +1,13 @@
 // src/app/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 
-type Ward = {
-  name: string;
-  stats: string;
-  focus: string;
-};
-
-const wardsData: Ward[] = [
-  {
-    name: "Roysambu Ward",
-    stats: "Infrastructure: roads, drainage, and safe walkways.",
-    focus:
-      "In the next 5 years, we focus on safer pedestrian routes around TRM, upgraded estate roads, and better drainage to reduce flooding.",
-  },
-  {
-    name: "Githurai Ward",
-    stats: "Digital literacy & small business support.",
-    focus:
-      "We will create digital learning centers, support youth in online work, and organize market reforms so traders work in cleaner, safer spaces.",
-  },
-  {
-    name: "Kahawa West Ward",
-    stats: "Water, sanitation & clean estates.",
-    focus:
-      "We aim for more reliable water access, modern public toilets, and organized waste collection points within walking distance.",
-  },
-  {
-    name: "Kahawa Ward",
-    stats: "Roads, security & clean estates.",
-    focus:
-      "We aim for more reliable road access, modern public wifi, and organized waste collection points within walking distance.",
-  },
-  {
-    name: "Zimmerman",
-    stats: "Youth engagement, creativity & safety.",
-    focus:
-      "We will invest in safe evening spaces, arts and music hubs, and community policing partnerships to reduce crime and idleness.",
-  },
-];
-
-const InteractiveMap: React.FC = () => {
-  const [activeWard, setActiveWard] = useState<Ward>(wardsData[0]);
-
-  return (
-    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-      {/* Map Area */}
-      <div className="w-full lg:w-3/4 max-w-3xl mx-auto">
-        <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border-4 border-[#2B27AB] bg-gray-100">
-          {/* 🔁 Real Google Maps embed for Roysambu */}
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.876788350298!2d36.882!3d-1.2185!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f3f7f2b9b1c4f%3A0x0!2sRoysambu%2C%20Nairobi!5e0!3m2!1sen!2ske!4v1700000000000"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            className="w-full h-full border-0"
-          />
-        </div>
-
-        {/* Ward chips BELOW the map — touch-friendly */}
-        <div className="mt-4 flex flex-wrap gap-2 justify-center">
-          {wardsData.map((ward) => (
-            <button
-              key={ward.name}
-              type="button"
-              onClick={() => setActiveWard(ward)}
-              className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold border transition
-                ${
-                  activeWard.name === ward.name
-                    ? "bg-[#2B27AB] text-white border-[#2B27AB]"
-                    : "bg-white text-[#2B27AB] border-[#2B27AB]/50 hover:bg-[#2B27AB]/10"
-                }`}
-            >
-              {ward.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Data Panel */}
-      <div className="w-full lg:w-1/4 max-w-md mx-auto lg:mx-0 p-5 sm:p-6 bg-gray-50 rounded-xl shadow-lg border border-gray-200">
-        <h3 className="text-lg sm:text-xl font-bold text-[#2B27AB] border-b pb-2 mb-4">
-          Ward Focus (2025–2030)
-        </h3>
-        <p className="text-base font-semibold text-gray-800">{activeWard.name}</p>
-        <p className="mt-2 text-sm text-gray-700">
-          <span className="font-medium">Primary Focus: </span>
-          {activeWard.stats}
-        </p>
-
-        <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-          <h4 className="text-sm font-bold text-gray-700">
-            5-Year Development Direction
-          </h4>
-          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-            {activeWard.focus}
-          </p>
-          <ul className="text-xs text-gray-600 mt-2 space-y-1">
-            <li>• Youth jobs & training opportunities</li>
-            <li>• Better services close to estates</li>
-            <li>• Cleaner, safer neighborhoods</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-};
+const WardMap = dynamic(() => import("../components/WardMap"), {
+  ssr: false,
+});
 
 export default function Home() {
   return (
@@ -117,7 +17,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center">
           {/* Left: logo + text + bio */}
           <div className="text-center md:text-left">
-            {/* Logo (KEEPING your original behavior) */}
+            {/* Logo (keeping your original behaviour) */}
             <div className="flex justify-center md:justify-start mb-4">
               <Image
                 src="/Safilogo.png"
@@ -142,9 +42,10 @@ export default function Home() {
 
             {/* Sammy bio */}
             <p className="mt-4 text-sm sm:text-base text-white/90 max-w-xl md:max-w-none">
-              Sammy Maigwa Karuri is an ICT expert, mentor, and community developer
+              Sammy Maigwa Karuri is a teacher, mentor, and community developer
               with deep roots in Roysambu and years of experience in youth
-              empowerment, TVET education.
+              empowerment, TVET education, and affordable housing projects in
+              Kenya and abroad.
             </p>
 
             <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center md:justify-start gap-3 sm:gap-4">
@@ -188,13 +89,12 @@ export default function Home() {
             Data-Driven Development: See Your Hood on the Map
           </h2>
           <p className="mt-3 text-gray-700 max-w-4xl mx-auto">
-            Zoom and move around the map to see your estate and neighborhood in
-            Roysambu. Then tap on a ward below the map to see its 5-year
-            development focus.
+            Zoom, pan, and explore Roysambu. Tap a ward below the map to fly to
+            that area and see its 5-year development focus.
           </p>
         </div>
 
-        <InteractiveMap />
+        <WardMap />
       </section>
     </main>
   );
