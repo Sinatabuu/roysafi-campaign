@@ -1,6 +1,8 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
+
 // Carousel Data
 const carouselItems = [
   {
@@ -28,21 +30,24 @@ const testimonials = [
   {
     name: "Jane M.",
     role: "TVET Graduate, 2024",
-    content: "The digital training changed my life — I now run a small graphic design business from home.",
+    content:
+      "The digital training changed my life — I now run a small graphic design business from home.",
   },
   {
     name: "Mr. Otieno",
     role: "Headteacher, Roysambu Secondary",
-    content: "Roy’s commitment to youth goes beyond words — he shows up, listens, and acts.",
+    content:
+      "Roy’s commitment to youth goes beyond words — he shows up, listens, and acts.",
   },
   {
     name: "David K.",
     role: "Youth Group Leader",
-    content: "We finally have a leader who understands our struggles and invests in solutions.",
+    content:
+      "We finally have a leader who understands our struggles and invests in solutions.",
   },
 ];
 
-
+// Ward data for the interactive map overlay – tied to 5-year focus
 const wardsData = [
   {
     name: "Roysambu Ward",
@@ -70,22 +75,21 @@ const wardsData = [
   },
 ];
 
-const InteractiveMap = () => {
+const InteractiveMap: React.FC = () => {
   const [activeWard, setActiveWard] = useState(wardsData[0]);
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
       {/* Map Area */}
       <div className="relative w-full lg:w-3/4 max-w-3xl mx-auto aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border-4 border-[#2B27AB] group bg-gray-100">
-        
-              <Image
-        src="/roymap.webp"
-        alt="Community event"
-        width={600}
-        height={400}
-        sizes="(max-width: 768px) 100vw, 600px"
-        className="w-full h-auto rounded-xl object-cover"
-      />
+        {/* Responsive map image */}
+        <Image
+          src="/roymap.webp"
+          alt="GIS Land Cover Map of Roysambu Constituency"
+          fill
+          priority
+          className="object-contain"
+        />
 
         {/* Overlay chips – tap on mobile, hover on desktop */}
         {wardsData.map((ward) => (
@@ -118,7 +122,8 @@ const InteractiveMap = () => {
         </h3>
         <p className="text-base font-semibold text-gray-800">{activeWard.name}</p>
         <p className="mt-2 text-sm text-gray-700">
-          <span className="font-medium">Primary Focus Area:</span> {activeWard.stats}
+          <span className="font-medium">Primary Focus Area:</span>{" "}
+          {activeWard.stats}
         </p>
 
         <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
@@ -136,16 +141,15 @@ const InteractiveMap = () => {
   );
 };
 
-
-
-export default function Home() {
+const Home: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Auto-rotate carousel every 5s
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % carouselItems.length);
-    }, 5000);
+    const interval = setInterval(
+      () => setCurrentIndex((prev) => (prev + 1) % carouselItems.length),
+      5000
+    );
     return () => clearInterval(interval);
   }, []);
 
@@ -161,35 +165,50 @@ export default function Home() {
     <main className="min-h-screen bg-white">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#2B27AB] to-[#52C4CF] text-white py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8">
-  <div className="max-w-4xl mx-auto text-center">
-    <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight text-balance">
-      Roy Safi
-    </h1>
-    <p className="mt-4 sm:mt-6 text-lg sm:text-xl md:text-2xl font-light max-w-2xl mx-auto text-balance">
-      Empowering Roysambu Through Community Leadership, Education & Opportunity
-    </p>
-    <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-      {/* buttons unchanged */}
-    </div>
-  </div>
-</section>
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight">
+            Roy Safi
+          </h1>
+          <p className="mt-4 sm:mt-6 text-lg sm:text-xl md:text-2xl font-light max-w-2xl mx-auto">
+            Empowering Roysambu Through Community Leadership, Education &
+            Opportunity
+          </p>
+          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+            <a
+              href="/about"
+              className="bg-white text-[#2B27AB] font-semibold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition"
+            >
+              Learn More
+            </a>
+            <a
+              href="/get-involved"
+              className="border-2 border-white text-white font-semibold py-3 px-8 rounded-full hover:bg-white/10 transition"
+            >
+              Get Involved
+            </a>
+          </div>
+        </div>
+      </section>
 
-
-      {/* Constituency Map Section - UPDATED TO INTERACTIVE COMPONENT */}
+      {/* Constituency Map Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-[#2B27AB]">
             Data-Driven Development: Our Constituency Map
           </h2>
           <p className="mt-3 text-gray-700 max-w-4xl mx-auto">
-            We use geographical data for targeted development. Hover over the areas on the map to see the unique priorities for each Roysambu ward, ensuring every area receives the specific resources it needs.
+            We use geographical data for targeted development. Tap or hover
+            over the areas on the map to see the unique priorities for each
+            Roysambu ward, ensuring every area receives the specific resources
+            it needs.
           </p>
         </div>
-        
+
         <InteractiveMap />
 
         <p className="text-sm text-gray-500 mt-8 text-center italic">
-          Visualizing Roysambu's complexity: Electoral Areas, Settlement (Pink), and Green Spaces (Green/Yellow).
+          Visualizing Roysambu&apos;s complexity: Electoral Areas, settlement
+          zones, and green spaces.
         </p>
       </section>
 
@@ -201,7 +220,10 @@ export default function Home() {
             style={{ transform: `translateX(-${currentIndex * 100}%)` }}
           >
             {carouselItems.map((item) => (
-              <div key={item.id} className={`w-full flex-shrink-0 ${item.bgColor} text-white p-8 md:p-12`}>
+              <div
+                key={item.id}
+                className={`w-full flex-shrink-0 ${item.bgColor} text-white p-8 md:p-12`}
+              >
                 <h3 className="text-2xl md:text-3xl font-bold">{item.title}</h3>
                 <p className="mt-2 text-lg opacity-90">{item.subtitle}</p>
               </div>
@@ -225,13 +247,13 @@ export default function Home() {
           </button>
 
           {/* Indicators */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
             {carouselItems.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
                 className={`w-3 h-3 rounded-full ${
-                  idx === currentIndex ? 'bg-white' : 'bg-white/50'
+                  idx === currentIndex ? "bg-white" : "bg-white/50"
                 } transition-colors`}
                 aria-label={`Go to slide ${idx + 1}`}
               />
@@ -248,9 +270,9 @@ export default function Home() {
               A Vision for Roysambu
             </h2>
             <p className="mt-4 text-gray-700">
-              Rooted in decades of service as a teacher, mentor, and businessman,
-              Roy Safi champions youth empowerment, technical education (TVET),
-              and inclusive development in our community.
+              Rooted in decades of service as a teacher, mentor, and
+              businessman, Roy Safi champions youth empowerment, technical
+              education (TVET), and inclusive development in our community.
             </p>
             <ul className="mt-6 space-y-3">
               <li className="flex items-start">
@@ -263,12 +285,16 @@ export default function Home() {
               </li>
               <li className="flex items-start">
                 <span className="text-[#52C4CF] mr-2">✅</span>
-                <span>Promote transparency, youth engagement, and social welfare</span>
+                <span>
+                  Promote transparency, youth engagement, and social welfare
+                </span>
               </li>
             </ul>
           </div>
           <div className="bg-gray-100 rounded-xl h-64 md:h-80 flex items-center justify-center shadow-inner">
-            <span className="text-gray-500">📸 Community Event Photo Placeholder</span>
+            <span className="text-gray-500">
+              📸 Community Event Photo Placeholder
+            </span>
           </div>
         </div>
       </section>
@@ -276,7 +302,9 @@ export default function Home() {
       {/* Testimonials */}
       <section className="py-16 bg-gray-50 px-4">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-[#2B27AB]">Voices from Roysambu</h2>
+          <h2 className="text-3xl font-bold text-center text-[#2B27AB]">
+            Voices from Roysambu
+          </h2>
           <p className="mt-4 text-gray-600 text-center max-w-2xl mx-auto">
             Real impact. Real stories.
           </p>
@@ -307,10 +335,11 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <h3 className="text-2xl md:text-3xl font-bold">Support the Movement</h3>
           <p className="mt-4 max-w-2xl mx-auto">
-            Your contribution helps fund TVET kits, mentorship programs, and community initiatives in Roysambu.
+            Your contribution helps fund TVET kits, mentorship programs, and
+            community initiatives in Roysambu.
           </p>
           <a
-            href="https://paypal.me/roysafi" // 🔁 Replace with your M-Pesa Paybill, Chapa, or fundraising link
+            href="https://paypal.me/roysafi"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-8 inline-block bg-[#52C4CF] text-[#2B27AB] font-bold py-4 px-10 rounded-full text-lg hover:bg-[#42b3bf] transition shadow-lg transform hover:scale-105"
@@ -324,4 +353,6 @@ export default function Home() {
       </section>
     </main>
   );
-}
+};
+
+export default Home;
