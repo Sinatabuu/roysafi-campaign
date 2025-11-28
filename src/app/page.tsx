@@ -42,13 +42,6 @@ const testimonials = [
   },
 ];
 
-// Mock data for the interactive map overlay
-const wardsData = [
-    { name: 'Roysambu Ward', stats: 'Infrastructure Priority: Roads', color: 'bg-red-500/80', position: 'top-[10%] left-[20%]' },
-    { name: 'Githurai Ward', stats: 'Key Focus: Digital Literacy Centers', color: 'bg-yellow-500/80', position: 'top-[30%] right-[10%]' },
-    { name: 'Kahawa West Ward', stats: 'Key Focus: Water & Sanitation', color: 'bg-green-500/80', position: 'bottom-[10%] left-[10%]' },
-    { name: 'Zimmerman', stats: 'Youth Engagement Score: High', color: 'bg-blue-500/80', position: 'top-[60%] left-[40%]' },
-];
 
 const wardsData = [
   {
