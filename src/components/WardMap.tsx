@@ -4,16 +4,20 @@
 import React, {
   useState,
   useEffect,
-  KeyboardEvent,
   useCallback,
+  KeyboardEvent,
 } from "react";
 import {
   MapContainer,
   TileLayer,
+  Marker,
   CircleMarker,
+  Popup,
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+
+import { pollingSites, PollingSite } from "../data/polling_sites";
 
 type Ward = {
   name: string;
@@ -89,7 +93,9 @@ const wardAliases: Record<string, string> = {
 // relax Leaflet types for TS
 const AnyMapContainer: any = MapContainer;
 const AnyTileLayer: any = TileLayer;
+const AnyMarker: any = Marker;
 const AnyCircleMarker: any = CircleMarker;
+const AnyPopup: any = Popup;
 
 const FlyToWard: React.FC<{ ward: Ward }> = ({ ward }) => {
   const map = useMap();
@@ -117,6 +123,14 @@ const WardMap: React.FC = () => {
     label?: string;
   } | null>(null);
 
+  // === wifi counts for the right-hand card ===
+  const wardSites: PollingSite[] = pollingSites.filter(
+    (s) => s.ward === activeWard.name
+  );
+  const phase1Count = wardSites.filter((s) => s.wifiPhase === 1).length;
+  const phase2Count = wardSites.filter((s) => s.wifiPhase === 2).length;
+  const phase3Count = wardSites.filter((s) => s.wifiPhase === 3).length;
+
   const handleLocate = useCallback(async () => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) {
@@ -134,7 +148,7 @@ const WardMap: React.FC = () => {
       return;
     }
 
-    // 2) Try aliases
+    // 2) Try aliases (TRM, Zima, Kahawa Sukari, etc.)
     const aliasKey = Object.keys(wardAliases).find((key) =>
       term.includes(key)
     );
@@ -267,7 +281,7 @@ const WardMap: React.FC = () => {
             whenCreated={setMapInstance}
             className="absolute inset-0"
           >
-            {/* Base layer switch – now clearly different styles */}
+            {/* Base layer switch – streets vs planning */}
             <AnyTileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url={
@@ -277,25 +291,68 @@ const WardMap: React.FC = () => {
               }
             />
 
-            {/* Ward-based flyTo */}
+            {/* Smoothly fly when ward changes */}
             <FlyToWard ward={activeWard} />
 
-            {/* Ward markers as clean circles (no broken pin icons) */}
+            {/* Ward center markers (anchor points) */}
             {wardsData.map((ward) => (
-              <AnyCircleMarker
-                key={ward.name}
-                center={ward.center}
-                radius={activeWard.name === ward.name ? 10 : 7}
-                pathOptions={{
-                  color:
-                    activeWard.name === ward.name ? "#2B27AB" : "#52C4CF",
-                  fillColor:
-                    activeWard.name === ward.name ? "#2B27AB" : "#52C4CF",
-                  fillOpacity: 0.8,
-                  weight: 2,
-                }}
-              />
+              <AnyMarker key={ward.name} position={ward.center} />
             ))}
+
+            {/* Polling sites / Wi-Fi hubs */}
+            {pollingSites
+              .filter(
+                (site) =>
+                  site.ward === activeWard.name &&
+                  site.lat !== undefined &&
+                  site.lng !== undefined
+              )
+              .map((site) => {
+                // colour by wifi phase
+                const color =
+                  site.wifiPhase === 1
+                    ? "#EF4444" // red – pilot
+                    : site.wifiPhase === 2
+                    ? "#F59E0B" // amber – phase 2
+                    : "#22C55E"; // green – phase 3
+
+                return (
+                  <AnyCircleMarker
+                    key={site.name}
+                    center={[site.lat!, site.lng!]}
+                    radius={8}
+                    pathOptions={{
+                      color,
+                      fillColor: color,
+                      fillOpacity: 0.9,
+                      weight: 2,
+                    }}
+                  >
+                    <AnyPopup>
+                      <div className="text-xs">
+                        <div className="font-semibold">{site.name}</div>
+                        <div className="text-[10px] text-gray-600">
+                          Ward: {site.ward}
+                        </div>
+                        <div className="mt-1">
+                          <span className="font-semibold">Wi-Fi Phase: </span>
+                          {site.wifiPhase === 1
+                            ? "Phase 1 – Pilot / high priority"
+                            : site.wifiPhase === 2
+                            ? "Phase 2 – Expansion"
+                            : "Phase 3 – Later rollout"}
+                        </div>
+                        <div className="text-[10px] mt-1">
+                          Type:{" "}
+                          {site.type === "ground"
+                            ? "Field / Ground"
+                            : site.type}
+                        </div>
+                      </div>
+                    </AnyPopup>
+                  </AnyCircleMarker>
+                );
+              })}
 
             {/* Search hit marker */}
             {searchLocation && (
@@ -367,7 +424,7 @@ const WardMap: React.FC = () => {
             {activeWard.focus}
           </p>
 
-        <div className="pt-3 border-t border-dashed border-gray-300 space-y-1">
+          <div className="pt-3 border-t border-dashed border-gray-300 space-y-1">
             <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
               Quick Impact Targets
             </h5>
@@ -377,6 +434,34 @@ const WardMap: React.FC = () => {
               <li>• Cleaner, safer, and greener neighborhoods</li>
             </ul>
           </div>
+        </div>
+
+        {/* New: Wi-Fi roll-out summary */}
+        <div className="mt-5 pt-4 border-t border-gray-200 space-y-2">
+          <h4 className="text-sm font-bold text-gray-700">
+            Free Wi-Fi Plan – {activeWard.name}
+          </h4>
+          <p className="text-xs sm:text-sm text-gray-600">
+            Polling / community sites in this ward:{" "}
+            <span className="font-semibold">{wardSites.length}</span>
+          </p>
+          <ul className="text-xs text-gray-600 space-y-1">
+            <li>
+              <span className="inline-block w-2 h-2 rounded-full bg-[#EF4444] mr-2" />
+              Phase 1 (Pilot): {phase1Count} sites
+            </li>
+            <li>
+              <span className="inline-block w-2 h-2 rounded-full bg-[#F59E0B] mr-2" />
+              Phase 2: {phase2Count} sites
+            </li>
+            <li>
+              <span className="inline-block w-2 h-2 rounded-full bg-[#22C55E] mr-2" />
+              Phase 3: {phase3Count} sites
+            </li>
+          </ul>
+          <p className="text-[10px] text-gray-500 mt-1">
+            Data source: IEBC polling stations via AfroData (CC BY 4.0).
+          </p>
         </div>
 
         <div className="mt-4 rounded-lg bg-[#2B27AB]/5 px-3 py-2 text-[11px] sm:text-xs text-gray-700">
