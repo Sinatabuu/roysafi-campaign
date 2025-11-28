@@ -4,6 +4,7 @@
 import React from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import PollWidget from "../components/PollWidget";
 
 const WardMap = dynamic(() => import("../components/WardMap"), {
   ssr: false,
@@ -36,7 +37,7 @@ export default function Home() {
             </p>
 
             <p className="mt-4 sm:mt-6 text-lg sm:text-xl md:text-2xl font-light max-w-xl md:max-w-none">
-              A 5-Year Master Plan for Roysambu — youth, jobs, safe estates, and
+              A 5-Year Master Plan for Roysambu Constituency — education, jobs, safe estates, and
               dignified living for every ward.
             </p>
 
@@ -96,6 +97,24 @@ export default function Home() {
 
         <WardMap />
       </section>
+    <WardMap />
+<section className="pb-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+  <div className="grid md:grid-cols-2 gap-8 items-start">
+    <div>
+      {/* maybe reuse some vision text here */}
+      <h2 className="text-2xl sm:text-3xl font-bold text-[#2B27AB] mb-3">
+        Help Set Roysambu’s Priorities
+      </h2>
+      <p className="text-sm sm:text-base text-gray-700">
+        This live poll helps us understand what matters most in your ward. We
+        will use this data to shape the 5-year plan for roads, water, Wi-Fi,
+        youth jobs, and safety.
+      </p>
+    </div>
+    <PollWidget />
+  </div>
+</section>
+
       <section className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-16">
   <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
     <h3 className="text-xl sm:text-2xl font-bold text-[#2B27AB]">
