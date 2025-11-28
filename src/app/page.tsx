@@ -1,117 +1,76 @@
+// src/app/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 
-// Carousel Data
-const carouselItems = [
-  {
-    id: 1,
-    title: "Digital Skills for 500+ Youth",
-    subtitle: "Roysambu TVET Bootcamp — 2024",
-    bgColor: "bg-gradient-to-r from-[#2B27AB] to-[#52C4CF]",
-  },
-  {
-    id: 2,
-    title: "Community Clean-Up Initiative",
-    subtitle: "Together for a healthier Roysambu",
-    bgColor: "bg-gradient-to-r from-[#52C4CF] to-[#2B27AB]",
-  },
-  {
-    id: 3,
-    title: "Mentorship & Career Guidance",
-    subtitle: "Connecting students with local professionals",
-    bgColor: "bg-gradient-to-r from-[#2B27AB]/90 to-[#2B27AB]",
-  },
-];
+type Ward = {
+  name: string;
+  stats: string;
+  focus: string;
+};
 
-// Testimonials Data (replace with real quotes)
-const testimonials = [
-  {
-    name: "Jane M.",
-    role: "TVET Graduate, 2024",
-    content:
-      "The digital training changed my life — I now run a small graphic design business from home.",
-  },
-  {
-    name: "Mr. Otieno",
-    role: "Headteacher, Roysambu Secondary",
-    content:
-      "Roy’s commitment to youth goes beyond words — he shows up, listens, and acts.",
-  },
-  {
-    name: "David K.",
-    role: "Youth Group Leader",
-    content:
-      "We finally have a leader who understands our struggles and invests in solutions.",
-  },
-];
-
-// Ward data for the interactive map overlay – tied to 5-year focus
-const wardsData = [
+const wardsData: Ward[] = [
   {
     name: "Roysambu Ward",
-    stats: "Infrastructure Priority: Roads",
-    color: "bg-red-500/80",
-    position: "top-[14%] left-[26%]",
+    stats: "Infrastructure: roads, drainage, and safe walkways.",
+    focus:
+      "In the next 5 years, we focus on safer pedestrian routes around TRM, upgraded estate roads, and better drainage to reduce flooding.",
   },
   {
     name: "Githurai Ward",
-    stats: "Key Focus: Digital Literacy Centers",
-    color: "bg-yellow-500/80",
-    position: "top-[32%] right-[14%]",
+    stats: "Digital literacy & small business support.",
+    focus:
+      "We will create digital learning centers, support youth in online work, and organize market reforms so traders work in cleaner, safer spaces.",
   },
   {
     name: "Kahawa West Ward",
-    stats: "Key Focus: Water & Sanitation",
-    color: "bg-green-500/80",
-    position: "bottom-[16%] left-[18%]",
+    stats: "Water, sanitation & clean estates.",
+    focus:
+      "We aim for more reliable water access, modern public toilets, and organized waste collection points within walking distance.",
   },
   {
     name: "Zimmerman",
-    stats: "Youth Engagement Score: High",
-    color: "bg-blue-500/80",
-    position: "top-[60%] left-[40%]",
+    stats: "Youth engagement, creativity & safety.",
+    focus:
+      "We will invest in safe evening spaces, arts and music hubs, and community policing partnerships to reduce crime and idleness.",
   },
 ];
 
 const InteractiveMap: React.FC = () => {
-  const [activeWard, setActiveWard] = useState(wardsData[0]);
+  const [activeWard, setActiveWard] = useState<Ward>(wardsData[0]);
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
       {/* Map Area */}
-      <div className="relative w-full lg:w-3/4 max-w-3xl mx-auto aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border-4 border-[#2B27AB] group bg-gray-100">
-        {/* Responsive map image */}
-        <Image
-          src="/roymap.webp"
-          alt="GIS Land Cover Map of Roysambu Constituency"
-          fill
-          priority
-          className="object-contain"
-        />
+      <div className="w-full lg:w-3/4 max-w-3xl mx-auto">
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border-4 border-[#2B27AB] bg-gray-100">
+          {/* 🔁 Real Google Maps embed for Roysambu */}
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.876788350298!2d36.882!3d-1.2185!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f3f7f2b9b1c4f%3A0x0!2sRoysambu%2C%20Nairobi!5e0!3m2!1sen!2ske!4v1700000000000"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="w-full h-full border-0"
+          />
+        </div>
 
-        {/* Overlay chips – tap on mobile, hover on desktop */}
-        {wardsData.map((ward) => (
-          <button
-            key={ward.name}
-            type="button"
-            className={`absolute ${ward.position} -translate-x-1/2 -translate-y-1/2
-                        px-2 py-1 rounded-full text-white font-semibold text-[10px] sm:text-xs
-                        shadow-lg ring-2 ring-white/80 ${ward.color}
-                        opacity-85 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white`}
-            onClick={() => setActiveWard(ward)}
-            onMouseEnter={() => setActiveWard(ward)}
-            aria-label={ward.name}
-          >
-            {ward.name.split(" ")[0]}
-          </button>
-        ))}
-
-        <div className="pointer-events-none absolute inset-x-4 bottom-4 sm:bottom-6 flex justify-center">
-          <span className="inline-flex items-center rounded-full bg-black/40 px-3 py-1 text-[10px] sm:text-xs text-white font-semibold opacity-90">
-            Tap or hover on the circles to see each ward’s focus
-          </span>
+        {/* Ward chips BELOW the map — touch-friendly */}
+        <div className="mt-4 flex flex-wrap gap-2 justify-center">
+          {wardsData.map((ward) => (
+            <button
+              key={ward.name}
+              type="button"
+              onClick={() => setActiveWard(ward)}
+              className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold border transition
+                ${
+                  activeWard.name === ward.name
+                    ? "bg-[#2B27AB] text-white border-[#2B27AB]"
+                    : "bg-white text-[#2B27AB] border-[#2B27AB]/50 hover:bg-[#2B27AB]/10"
+                }`}
+            >
+              {ward.name}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -122,18 +81,21 @@ const InteractiveMap: React.FC = () => {
         </h3>
         <p className="text-base font-semibold text-gray-800">{activeWard.name}</p>
         <p className="mt-2 text-sm text-gray-700">
-          <span className="font-medium">Primary Focus Area:</span>{" "}
+          <span className="font-medium">Primary Focus: </span>
           {activeWard.stats}
         </p>
 
         <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
           <h4 className="text-sm font-bold text-gray-700">
-            Quick Impact Targets (Mock)
+            5-Year Development Direction
           </h4>
-          <ul className="text-xs text-gray-600 space-y-1">
-            <li>• 5-year youth jobs created</li>
-            <li>• TVET & digital skills coverage</li>
-            <li>• Safety, sanitation & green spaces</li>
+          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+            {activeWard.focus}
+          </p>
+          <ul className="text-xs text-gray-600 mt-2 space-y-1">
+            <li>• Youth jobs & training opportunities</li>
+            <li>• Better services close to estates</li>
+            <li>• Cleaner, safer neighborhoods</li>
           </ul>
         </div>
       </div>
@@ -141,218 +103,93 @@ const InteractiveMap: React.FC = () => {
   );
 };
 
-const Home: React.FC = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Auto-rotate carousel every 5s
-  useEffect(() => {
-    const interval = setInterval(
-      () => setCurrentIndex((prev) => (prev + 1) % carouselItems.length),
-      5000
-    );
-    return () => clearInterval(interval);
-  }, []);
-
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % carouselItems.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + carouselItems.length) % carouselItems.length);
-  };
-
+export default function Home() {
   return (
     <main className="min-h-screen bg-white">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#2B27AB] to-[#52C4CF] text-white py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight">
-            Roy Safi
-          </h1>
-          <p className="mt-4 sm:mt-6 text-lg sm:text-xl md:text-2xl font-light max-w-2xl mx-auto">
-            Empowering Roysambu Through Community Leadership, Education &
-            Opportunity
-          </p>
-          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-            <a
-              href="/about"
-              className="bg-white text-[#2B27AB] font-semibold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition"
-            >
-              Learn More
-            </a>
-            <a
-              href="/get-involved"
-              className="border-2 border-white text-white font-semibold py-3 px-8 rounded-full hover:bg-white/10 transition"
-            >
-              Get Involved
-            </a>
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center">
+          {/* Left: logo + text + bio */}
+          <div className="text-center md:text-left">
+            {/* Logo (KEEPING your original behavior) */}
+            <div className="flex justify-center md:justify-start mb-4">
+              <Image
+                src="/Safilogo.png"
+                alt="Roy Safi logo"
+                width={72}
+                height={72}
+                className="rounded-full shadow-lg border-2 border-white/70"
+              />
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight">
+              Roy Safi
+            </h1>
+            <p className="mt-2 text-sm uppercase tracking-[0.2em] text-white/80">
+              Roysambu • Youth • Housing • Community Development
+            </p>
+
+            <p className="mt-4 sm:mt-6 text-lg sm:text-xl md:text-2xl font-light max-w-xl md:max-w-none">
+              A 5-Year Master Plan for Roysambu — youth, jobs, safe estates, and
+              dignified living for every ward.
+            </p>
+
+            {/* Sammy bio */}
+            <p className="mt-4 text-sm sm:text-base text-white/90 max-w-xl md:max-w-none">
+              Sammy Maigwa Karuri is a teacher, mentor, and community developer
+              with deep roots in Roysambu and years of experience in youth
+              empowerment, TVET education, and sunday school teacher.
+            </p>
+
+            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center md:justify-start gap-3 sm:gap-4">
+              <a
+                href="#map"
+                className="bg-white text-[#2B27AB] font-semibold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition"
+              >
+                View Ward Plans
+              </a>
+              <a
+                href="/get-involved"
+                className="border-2 border-white text-white font-semibold py-3 px-8 rounded-full hover:bg-white/10 transition"
+              >
+                Get Involved
+              </a>
+            </div>
+          </div>
+
+          {/* Right: Hon. Karuri portrait */}
+          <div className="flex justify-center md:justify-end">
+            <div className="relative w-56 h-56 sm:w-64 sm:h-64 md:w-72 md:h-72 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/70 bg-white/10">
+              <Image
+                src="/HonKaruri.png"
+                alt="Hon. Sammy Karuri portrait"
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Constituency Map Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+      {/* Map + Ward Focus */}
+      <section
+        id="map"
+        className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto"
+      >
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-[#2B27AB]">
-            Data-Driven Development: Our Constituency Map
+            Data-Driven Development: See Your Hood on the Map
           </h2>
           <p className="mt-3 text-gray-700 max-w-4xl mx-auto">
-            We use geographical data for targeted development. Tap or hover
-            over the areas on the map to see the unique priorities for each
-            Roysambu ward, ensuring every area receives the specific resources
-            it needs.
+            Zoom and move around the map to see your estate and neighborhood in
+            Roysambu. Then tap on a ward below the map to see its 5-year
+            development focus.
           </p>
         </div>
 
         <InteractiveMap />
-
-        <p className="text-sm text-gray-500 mt-8 text-center italic">
-          Visualizing Roysambu&apos;s complexity: Electoral Areas, settlement
-          zones, and green spaces.
-        </p>
-      </section>
-
-      {/* Carousel Section */}
-      <section className="py-12 px-4 max-w-5xl mx-auto">
-        <div className="relative overflow-hidden rounded-2xl shadow-xl">
-          <div
-            className="flex transition-transform duration-500 ease-in-out"
-            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-          >
-            {carouselItems.map((item) => (
-              <div
-                key={item.id}
-                className={`w-full flex-shrink-0 ${item.bgColor} text-white p-8 md:p-12`}
-              >
-                <h3 className="text-2xl md:text-3xl font-bold">{item.title}</h3>
-                <p className="mt-2 text-lg opacity-90">{item.subtitle}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Navigation Arrows */}
-          <button
-            onClick={prevSlide}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition z-10"
-            aria-label="Previous"
-          >
-            ‹
-          </button>
-          <button
-            onClick={nextSlide}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition z-10"
-            aria-label="Next"
-          >
-            ›
-          </button>
-
-          {/* Indicators */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
-            {carouselItems.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentIndex(idx)}
-                className={`w-3 h-3 rounded-full ${
-                  idx === currentIndex ? "bg-white" : "bg-white/50"
-                } transition-colors`}
-                aria-label={`Go to slide ${idx + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Vision & Values */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-3xl font-bold text-[#2B27AB]">
-              A Vision for Roysambu
-            </h2>
-            <p className="mt-4 text-gray-700">
-              Rooted in decades of service as a teacher, mentor, and
-              businessman, Roy Safi champions youth empowerment, technical
-              education (TVET), and inclusive development in our community.
-            </p>
-            <ul className="mt-6 space-y-3">
-              <li className="flex items-start">
-                <span className="text-[#52C4CF] mr-2">✅</span>
-                <span>Expand access to digital & vocational skills training</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-[#52C4CF] mr-2">✅</span>
-                <span>Strengthen local entrepreneurship & job creation</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-[#52C4CF] mr-2">✅</span>
-                <span>
-                  Promote transparency, youth engagement, and social welfare
-                </span>
-              </li>
-            </ul>
-          </div>
-          <div className="bg-gray-100 rounded-xl h-64 md:h-80 flex items-center justify-center shadow-inner">
-            <span className="text-gray-500">
-              📸 Community Event Photo Placeholder
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-16 bg-gray-50 px-4">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-[#2B27AB]">
-            Voices from Roysambu
-          </h2>
-          <p className="mt-4 text-gray-600 text-center max-w-2xl mx-auto">
-            Real impact. Real stories.
-          </p>
-          <div className="mt-12 grid md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <div
-                key={i}
-                className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 transform hover:scale-[1.02] transition duration-300"
-              >
-                <p className="italic text-gray-800">“{t.content}”</p>
-                <div className="mt-4 flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-[#52C4CF] flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                    {t.name.charAt(0)}
-                  </div>
-                  <div className="ml-3">
-                    <p className="font-semibold text-gray-900">{t.name}</p>
-                    <p className="text-sm text-gray-500">{t.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Donation CTA */}
-      <section className="bg-[#2B27AB] text-white py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-2xl md:text-3xl font-bold">Support the Movement</h3>
-          <p className="mt-4 max-w-2xl mx-auto">
-            Your contribution helps fund TVET kits, mentorship programs, and
-            community initiatives in Roysambu.
-          </p>
-          <a
-            href="https://paypal.me/roysafi"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-8 inline-block bg-[#52C4CF] text-[#2B27AB] font-bold py-4 px-10 rounded-full text-lg hover:bg-[#42b3bf] transition shadow-lg transform hover:scale-105"
-          >
-            🎯 Donate Now
-          </a>
-          <p className="mt-4 text-sm opacity-80">
-            Transparent. Accountable. Community-driven.
-          </p>
-        </div>
       </section>
     </main>
   );
-};
-
-export default Home;
+}
