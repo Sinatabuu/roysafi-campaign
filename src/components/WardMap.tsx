@@ -301,58 +301,59 @@ const WardMap: React.FC = () => {
 
             {/* Polling sites / Wi-Fi hubs */}
             {pollingSites
-              .filter(
-                (site) =>
-                  site.ward === activeWard.name &&
-                  site.lat !== undefined &&
-                  site.lng !== undefined
-              )
-              .map((site) => {
-                // colour by wifi phase
-                const color =
-                  site.wifiPhase === 1
-                    ? "#EF4444" // red – pilot
-                    : site.wifiPhase === 2
-                    ? "#F59E0B" // amber – phase 2
-                    : "#22C55E"; // green – phase 3
+  .filter((site) => site.ward === activeWard.name)
+  .map((site) => {
+    // Use real coords if present, otherwise fall back to ward center
+    const lat = site.lat ?? activeWard.center[0];
+    const lng = site.lng ?? activeWard.center[1];
 
-                return (
-                  <AnyCircleMarker
-                    key={site.name}
-                    center={[site.lat!, site.lng!]}
-                    radius={8}
-                    pathOptions={{
-                      color,
-                      fillColor: color,
-                      fillOpacity: 0.9,
-                      weight: 2,
-                    }}
-                  >
-                    <AnyPopup>
-                      <div className="text-xs">
-                        <div className="font-semibold">{site.name}</div>
-                        <div className="text-[10px] text-gray-600">
-                          Ward: {site.ward}
-                        </div>
-                        <div className="mt-1">
-                          <span className="font-semibold">Wi-Fi Phase: </span>
-                          {site.wifiPhase === 1
-                            ? "Phase 1 – Pilot / high priority"
-                            : site.wifiPhase === 2
-                            ? "Phase 2 – Expansion"
-                            : "Phase 3 – Later rollout"}
-                        </div>
-                        <div className="text-[10px] mt-1">
-                          Type:{" "}
-                          {site.type === "ground"
-                            ? "Field / Ground"
-                            : site.type}
-                        </div>
-                      </div>
-                    </AnyPopup>
-                  </AnyCircleMarker>
-                );
-              })}
+    const color =
+      site.wifiPhase === 1
+        ? "#EF4444" // red – pilot
+        : site.wifiPhase === 2
+        ? "#F59E0B" // amber – phase 2
+        : "#22C55E"; // green – phase 3
+
+    return (
+      <AnyCircleMarker
+        key={site.name}
+        center={[lat, lng]}
+        radius={8}
+        pathOptions={{
+          color,
+          fillColor: color,
+          fillOpacity: 0.9,
+          weight: 2,
+        }}
+      >
+        <AnyPopup>
+          <div className="text-xs">
+            <div className="font-semibold">{site.name}</div>
+            <div className="text-[10px] text-gray-600">
+              Ward: {site.ward}
+            </div>
+            <div className="mt-1">
+              <span className="font-semibold">Wi-Fi Phase: </span>
+              {site.wifiPhase === 1
+                ? "Phase 1 – Pilot / high priority"
+                : site.wifiPhase === 2
+                ? "Phase 2 – Expansion"
+                : "Phase 3 – Later rollout"}
+            </div>
+            <div className="text-[10px] mt-1">
+              Type: {site.type === "ground" ? "Field / Ground" : site.type}
+            </div>
+            {site.lat === undefined && site.lng === undefined && (
+              <div className="text-[9px] text-orange-600 mt-1">
+                Approximate location (using ward center) – GPS to be refined.
+              </div>
+            )}
+          </div>
+        </AnyPopup>
+      </AnyCircleMarker>
+    );
+  })}
+
 
             {/* Search hit marker */}
             {searchLocation && (
