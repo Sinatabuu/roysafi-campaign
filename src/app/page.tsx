@@ -136,9 +136,9 @@ export default function Home() {
 
             {/* Sammy bio */}
             <p className="mt-4 text-sm sm:text-base text-white/90 max-w-xl md:max-w-none">
-              Sammy Maigwa Karuri is a teacher, mentor, and community developer
+              Sammy Maigwa Karuri is an ICT expert, mentor, and community developer
               with deep roots in Roysambu and years of experience in youth
-              empowerment, TVET education, and sunday school teacher.
+              empowerment, TVET education.
             </p>
 
             <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center md:justify-start gap-3 sm:gap-4">
