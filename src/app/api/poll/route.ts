@@ -9,7 +9,7 @@ export async function GET() {
   try {
     // 1) get active poll
     const { rows: pollRows } = await sql<{
-      id: string;
+      id: number;
       slug: string;
       question: string;
       options: string[];
