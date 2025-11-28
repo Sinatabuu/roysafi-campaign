@@ -109,13 +109,14 @@ const FlyToWard: React.FC<{ ward: Ward }> = ({ ward }) => {
   return null;
 };
 
-type BaseLayer = "streets" | "planning";
+// now "satellite" instead of "planning"
+type BaseLayer = "streets" | "satellite";
 
 const WardMap: React.FC = () => {
   const [activeWard, setActiveWard] = useState<Ward>(wardsData[0]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchStatus, setSearchStatus] = useState<string | null>(null);
-  const [baseLayer, setBaseLayer] = useState<BaseLayer>("streets");
+  const [baseLayer, setBaseLayer] = useState<BaseLayer>("satellite");
   const [mapInstance, setMapInstance] = useState<any>(null);
   const [searchLocation, setSearchLocation] = useState<{
     lat: number;
@@ -123,7 +124,7 @@ const WardMap: React.FC = () => {
     label?: string;
   } | null>(null);
 
-  // === wifi counts for the right-hand card ===
+  // wifi counts for the right-hand card
   const wardSites: PollingSite[] = pollingSites.filter(
     (s) => s.ward === activeWard.name
   );
@@ -141,34 +142,32 @@ const WardMap: React.FC = () => {
     // 1) Try direct ward name match
     const wardMatch =
       wardsData.find((w) => w.name.toLowerCase().includes(term)) || null;
-    if (wardMatch) {
-      setActiveWard(wardMatch);
-      setSearchLocation(null);
-      setSearchStatus(`Showing: ${wardMatch.name}`);
-      return;
-    }
 
-    // 2) Try aliases (TRM, Zima, Kahawa Sukari, etc.)
+    // 2) Try aliases
+    let wardFromAlias: Ward | null = null;
     const aliasKey = Object.keys(wardAliases).find((key) =>
       term.includes(key)
     );
     if (aliasKey) {
       const wardName = wardAliases[aliasKey];
-      const ward = wardsData.find((w) => w.name === wardName);
-      if (ward) {
-        setActiveWard(ward);
-        setSearchLocation(null);
-        setSearchStatus(`Showing: ${ward.name}`);
-        return;
-      }
+      const w = wardsData.find((wd) => wd.name === wardName) || null;
+      wardFromAlias = w;
     }
 
-    // 3) Fallback to live geocoding (OpenStreetMap / Nominatim)
+    // choose which ward to highlight in the sidebar
+    const wardToUse = wardMatch || wardFromAlias;
+    if (wardToUse) {
+      setActiveWard(wardToUse);
+    }
+
+    // 3) Fallback or complement with live geocoding (OpenStreetMap / Nominatim)
     try {
       setSearchStatus("Searching on the map…");
 
+      // bias search strongly to Roysambu, Nairobi, Kenya
+      const geoQuery = `${searchTerm}, Roysambu, Nairobi, Kenya`;
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-        searchTerm
+        geoQuery
       )}&countrycodes=ke&limit=1`;
 
       const res = await fetch(url, {
@@ -180,6 +179,13 @@ const WardMap: React.FC = () => {
       const data: any[] = await res.json();
 
       if (!data || data.length === 0) {
+        // if no geocode but we at least found a ward, keep that info
+        if (wardToUse) {
+          setSearchStatus(`Showing: ${wardToUse.name} (no exact point found)`);
+          setSearchLocation(null);
+          return;
+        }
+
         setSearchStatus(
           "No match found. Try another estate, landmark, or street."
         );
@@ -239,7 +245,7 @@ const WardMap: React.FC = () => {
             </button>
           </div>
 
-          {/* Base layer toggle */}
+          {/* Base layer toggle: Streets vs Satellite */}
           <div className="flex justify-center sm:justify-end gap-2">
             <button
               type="button"
@@ -250,18 +256,18 @@ const WardMap: React.FC = () => {
                   : "bg-white text-[#2B27AB] border-[#2B27AB]/50 hover:bg-[#2B27AB]/10"
               }`}
             >
-              Streets Map
+              Streets
             </button>
             <button
               type="button"
-              onClick={() => setBaseLayer("planning")}
+              onClick={() => setBaseLayer("satellite")}
               className={`px-3 py-1 rounded-full text-[10px] sm:text-xs border font-semibold transition ${
-                baseLayer === "planning"
+                baseLayer === "satellite"
                   ? "bg-[#2B27AB] text-white border-[#2B27AB]"
                   : "bg-white text-[#2B27AB] border-[#2B27AB]/50 hover:bg-[#2B27AB]/10"
               }`}
             >
-              Planning Map
+              Satellite
             </button>
           </div>
         </div>
@@ -281,15 +287,18 @@ const WardMap: React.FC = () => {
             whenCreated={setMapInstance}
             className="absolute inset-0"
           >
-            {/* Base layer switch – streets vs planning */}
-            <AnyTileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url={
-                baseLayer === "streets"
-                  ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-              }
-            />
+            {/* Base layer switch – Streets vs Satellite */}
+            {baseLayer === "streets" ? (
+              <AnyTileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+            ) : (
+              <AnyTileLayer
+                attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              />
+            )}
 
             {/* Smoothly fly when ward changes */}
             <FlyToWard ward={activeWard} />
@@ -301,61 +310,62 @@ const WardMap: React.FC = () => {
 
             {/* Polling sites / Wi-Fi hubs */}
             {pollingSites
-  .filter((site) => site.ward === activeWard.name)
-  .map((site) => {
-    // Use real coords if present, otherwise fall back to ward center
-    const lat = site.lat ?? activeWard.center[0];
-    const lng = site.lng ?? activeWard.center[1];
+              .filter((site) => site.ward === activeWard.name)
+              .map((site) => {
+                // Use real coords if present, otherwise fall back to ward center
+                const lat = site.lat ?? activeWard.center[0];
+                const lng = site.lng ?? activeWard.center[1];
 
-    const color =
-      site.wifiPhase === 1
-        ? "#EF4444" // red – pilot
-        : site.wifiPhase === 2
-        ? "#F59E0B" // amber – phase 2
-        : "#22C55E"; // green – phase 3
+                const color =
+                  site.wifiPhase === 1
+                    ? "#EF4444" // red – pilot
+                    : site.wifiPhase === 2
+                    ? "#F59E0B" // amber – phase 2
+                    : "#22C55E"; // green – phase 3
 
-    return (
-      <AnyCircleMarker
-        key={site.name}
-        center={[lat, lng]}
-        radius={8}
-        pathOptions={{
-          color,
-          fillColor: color,
-          fillOpacity: 0.9,
-          weight: 2,
-        }}
-      >
-        <AnyPopup>
-          <div className="text-xs">
-            <div className="font-semibold">{site.name}</div>
-            <div className="text-[10px] text-gray-600">
-              Ward: {site.ward}
-            </div>
-            <div className="mt-1">
-              <span className="font-semibold">Wi-Fi Phase: </span>
-              {site.wifiPhase === 1
-                ? "Phase 1 – Pilot / high priority"
-                : site.wifiPhase === 2
-                ? "Phase 2 – Expansion"
-                : "Phase 3 – Later rollout"}
-            </div>
-            <div className="text-[10px] mt-1">
-              Type: {site.type === "ground" ? "Field / Ground" : site.type}
-            </div>
-
-            {/* Show when we are using an approximate location */}
-            {site.lat === undefined && site.lng === undefined && (
-              <div className="text-[9px] text-orange-600 mt-1">
-                Approximate location (using ward center). GPS to be refined.
-              </div>
-            )}
-          </div>
-        </AnyPopup>
-      </AnyCircleMarker>
-    );
-  })}
-
+                return (
+                  <AnyCircleMarker
+                    key={site.name}
+                    center={[lat, lng]}
+                    radius={8}
+                    pathOptions={{
+                      color,
+                      fillColor: color,
+                      fillOpacity: 0.9,
+                      weight: 2,
+                    }}
+                  >
+                    <AnyPopup>
+                      <div className="text-xs">
+                        <div className="font-semibold">{site.name}</div>
+                        <div className="text-[10px] text-gray-600">
+                          Ward: {site.ward}
+                        </div>
+                        <div className="mt-1">
+                          <span className="font-semibold">Wi-Fi Phase: </span>
+                          {site.wifiPhase === 1
+                            ? "Phase 1 – Pilot / high priority"
+                            : site.wifiPhase === 2
+                            ? "Phase 2 – Expansion"
+                            : "Phase 3 – Later rollout"}
+                        </div>
+                        <div className="text-[10px] mt-1">
+                          Type:{" "}
+                          {site.type === "ground"
+                            ? "Field / Ground"
+                            : site.type}
+                        </div>
+                        {site.lat === undefined && site.lng === undefined && (
+                          <div className="text-[9px] text-orange-600 mt-1">
+                            Approximate location (using ward center). GPS to be
+                            refined.
+                          </div>
+                        )}
+                      </div>
+                    </AnyPopup>
+                  </AnyCircleMarker>
+                );
+              })}
 
             {/* Search hit marker */}
             {searchLocation && (
@@ -368,7 +378,18 @@ const WardMap: React.FC = () => {
                   fillOpacity: 0.85,
                   weight: 2,
                 }}
-              />
+              >
+                <AnyPopup>
+                  <div className="text-xs">
+                    <div className="font-semibold">
+                      {searchLocation.label ?? "Search location"}
+                    </div>
+                    <div className="text-[10px] text-gray-600 mt-1">
+                      Zoomed to live map result (Nairobi/Roysambu area).
+                    </div>
+                  </div>
+                </AnyPopup>
+              </AnyCircleMarker>
             )}
           </AnyMapContainer>
 
@@ -439,7 +460,7 @@ const WardMap: React.FC = () => {
           </div>
         </div>
 
-        {/* New: Wi-Fi roll-out summary */}
+        {/* Wi-Fi roll-out summary */}
         <div className="mt-5 pt-4 border-t border-gray-200 space-y-2">
           <h4 className="text-sm font-bold text-gray-700">
             Free Wi-Fi Plan – {activeWard.name}
@@ -488,7 +509,7 @@ const WardMap: React.FC = () => {
             href={streetViewUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs sm:text-sm font-semibold text-[#2B27AB] bg-white border border-[#2B27AB] rounded-full px-4 py-2 text-center hover:bg-[#2B27AB]/5 transition"
+            className="text-xs sm:text-sm font-semibold text-[#2B27AB] bg.white border border-[#2B27AB] rounded-full px-4 py-2 text-center hover:bg-[#2B27AB]/5 transition"
           >
             Street View for this ward
           </a>
