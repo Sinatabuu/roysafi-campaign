@@ -47,6 +47,12 @@ export default function Home() {
                 View Ward Plans
               </a>
               <a
+              href="/roysambu"
+              className="inline-flex items-center px-5 py-2.5 rounded-full bg-emerald-600 text-white font-semibold text-sm shadow hover:bg-emerald-700 transition"
+            >
+              Take the Roysambu People’s Poll
+            </a>
+              <a
                 href="/get-involved"
                 className="border-2 border-white text-white font-semibold py-3 px-8 rounded-full hover:bg-white/10 transition"
               >
