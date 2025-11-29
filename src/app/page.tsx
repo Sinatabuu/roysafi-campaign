@@ -3,8 +3,14 @@
 
 import React from "react";
 import Image from "next/image";
-import WardMap from "../components/WardMap";
+import dynamic from "next/dynamic";
 import PollWidget from "../components/PollWidget";
+
+const WardMap = dynamic(
+  () => import("../components/WardMap").then((mod) => mod.WardMap),
+  { ssr: false }
+);
+
 
 export default function Home() {
   return (

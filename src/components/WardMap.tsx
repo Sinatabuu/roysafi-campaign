@@ -1,15 +1,14 @@
 // src/components/WardMap.tsx
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  KeyboardEvent,
-} from "react";
+import React, { useState, useEffect } from "react";
+import {
+  MapContainer, TileLayer, CircleMarker, Popup, useMap
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { pollingSites, PollingSite } from "../data/polling_sites";
+// If you need pollingSites later, you can still import them:
+// import { pollingSites, PollingSite } from "../data/polling_sites";
 
 type Ward = {
   name: string;
@@ -32,519 +31,148 @@ const wardsData: Ward[] = [
     name: "Githurai Ward",
     stats: "Security, digital literacy & small business support.",
     focus:
-      "We will create digital learning centers, support youth in online work, and organize market reforms so traders work in cleaner, safer spaces.",
-    center: [-1.2095, 36.894],
+      "We will create digital learning centers, support vibandas and small traders, and improve safety in the Githurai corridors.",
+    center: [-1.212, 36.899],
+    zoom: 15,
+  },
+  {
+    name: "Zimmerman Ward",
+    stats: "Orderly development, waste management and public spaces.",
+    focus:
+      "We will push for better garbage management, organized stages, and open spaces where families and youth can breathe.",
+    center: [-1.217, 36.878],
     zoom: 15,
   },
   {
     name: "Kahawa West Ward",
-    stats: "Water, sanitation & clean estates.",
+    stats: "Schools, health and safe neighbourhoods.",
     focus:
-      "We aim for more reliable water access, modern public toilets, and organized waste collection points within walking distance.",
-    center: [-1.212, 36.905],
-    zoom: 15,
-  },
-  {
-    name: "Zimmerman",
-    stats: "Youth engagement, free Wi-Fi, creativity & safety.",
-    focus:
-      "We will invest in safe evening spaces, arts and music hubs, free Wi-Fi zones, and community policing partnerships to reduce crime and idleness.",
-    center: [-1.2195, 36.876],
+      "Our focus is on upgrading schools, making amenities accessible, and keeping estates safe and walkable.",
+    center: [-1.183, 36.897],
     zoom: 15,
   },
   {
     name: "Kahawa Ward",
-    stats: "Roads, sports, free Wi-Fi & clean estates.",
+    stats: "Transport, safety and student-friendly services.",
     focus:
-      "Kahawa will see better access roads, modern sports grounds, public Wi-Fi hotspots, and organized waste management on every main court.",
-    center: [-1.197823, 36.946],
+      "We want better links for students and workers and safer roads along the Thika Road corridor and estates.",
+    center: [-1.188, 36.923],
     zoom: 15,
   },
 ];
 
-// alias mapping so local slang still works
-const wardAliases: Record<string, string> = {
-  trm: "Roysambu Ward",
-  "trm drive": "Roysambu Ward",
-  seasons: "Roysambu Ward",
-  roysambu: "Roysambu Ward",
-
-  "githurai 44": "Githurai Ward",
-  "githurai 45": "Githurai Ward",
-  githurai: "Githurai Ward",
-
-  "kahawa west": "Kahawa West Ward",
-  "kahawa sukari": "Kahawa Ward",
-  "kahawa wendani": "Kahawa Ward",
-  kahawa: "Kahawa Ward",
-
-  zima: "Zimmerman",
-  zimmerman: "Zimmerman",
+type WardMapProps = {
+  /** When provided, the map will highlight and fly to this ward. */
+  activeWard?: string | null;
+  /** When a ward is clicked on the map or card. */
+  onWardSelect?: (wardName: string) => void;
 };
 
-type BaseLayer = "streets" | "satellite";
-
-const WardMap: React.FC = () => {
-  const [activeWard, setActiveWard] = useState<Ward>(wardsData[0]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchStatus, setSearchStatus] = useState<string | null>(null);
-  const [baseLayer, setBaseLayer] = useState<BaseLayer>("satellite");
-  const [mapInstance, setMapInstance] = useState<any>(null);
-  const [searchLocation, setSearchLocation] = useState<{
-    lat: number;
-    lng: number;
-    label?: string;
-  } | null>(null);
-
-  // 🔥 NEW: load react-leaflet only on the client
-  const [leaflet, setLeaflet] = useState<any>(null);
-
+const FlyToWard: React.FC<{ center: [number, number]; zoom: number }> = ({
+  center,
+  zoom,
+}) => {
+  const map = useMap();
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const mod = await import("react-leaflet");
-        if (mounted) {
-          setLeaflet(mod);
-        }
-      } catch (err) {
-        console.error("Failed to load react-leaflet:", err);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    map.flyTo(center, zoom);
+  }, [center, zoom, map]);
+  return null;
+};
 
-  const wardSites: PollingSite[] = pollingSites.filter(
-    (s) => s.ward === activeWard.name
+export const WardMap: React.FC<WardMapProps> = ({
+  activeWard,
+  onWardSelect,
+}) => {
+  // If no activeWard prop, use internal state so it still works on the homepage.
+  const [internalActiveWard, setInternalActiveWard] = useState<Ward>(
+    wardsData[0]
   );
-  const phase1Count = wardSites.filter((s) => s.wifiPhase === 1).length;
-  const phase2Count = wardSites.filter((s) => s.wifiPhase === 2).length;
-  const phase3Count = wardSites.filter((s) => s.wifiPhase === 3).length;
 
-  const handleLocate = useCallback(async () => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) {
-      setSearchStatus("Type an estate, street, or ward name.");
-      return;
-    }
+  const effectiveActiveWardName = activeWard || internalActiveWard.name;
 
-    // 1) Try direct ward name match
-    const wardMatch =
-      wardsData.find((w) => w.name.toLowerCase().includes(term)) || null;
+  const activeWardData =
+    wardsData.find((w) => w.name === effectiveActiveWardName) || wardsData[0];
 
-    // 2) Try aliases
-    let wardFromAlias: Ward | null = null;
-    const aliasKey = Object.keys(wardAliases).find((key) =>
-      term.includes(key)
-    );
-    if (aliasKey) {
-      const wardName = wardAliases[aliasKey];
-      const w = wardsData.find((wd) => wd.name === wardName) || null;
-      wardFromAlias = w;
-    }
-
-    const wardToUse = wardMatch || wardFromAlias;
-    if (wardToUse) {
-      setActiveWard(wardToUse);
-    }
-
-    // 3) Live geocoding (Nominatim) focused on Roysambu, Nairobi, Kenya
-    try {
-      setSearchStatus("Searching on the map…");
-
-      const geoQuery = `${searchTerm}, Roysambu, Nairobi, Kenya`;
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-        geoQuery
-      )}&countrycodes=ke&limit=1`;
-
-      const res = await fetch(url, {
-        headers: {
-          "Accept-Language": "en",
-        },
-      });
-
-      const data: any[] = await res.json();
-
-      if (!data || data.length === 0) {
-        if (wardToUse) {
-          setSearchStatus(`Showing: ${wardToUse.name} (no exact point found)`);
-          setSearchLocation(null);
-          return;
-        }
-        setSearchStatus(
-          "No match found. Try another estate, landmark, or street."
-        );
-        setSearchLocation(null);
-        return;
-      }
-
-      const hit = data[0];
-      const lat = parseFloat(hit.lat);
-      const lng = parseFloat(hit.lon);
-      const label: string = hit.display_name || searchTerm;
-
-      setSearchLocation({ lat, lng, label });
-      setSearchStatus(`Showing: ${label}`);
-
-      if (mapInstance) {
-        mapInstance.flyTo([lat, lng], 17, { duration: 1.2 });
-      }
-    } catch (err) {
-      console.error("Geocode error:", err);
-      setSearchStatus("Search failed. Check your internet and try again.");
-      setSearchLocation(null);
-    }
-  }, [mapInstance, searchTerm]);
-
-  const handleSearchKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      void handleLocate();
+  const handleSelect = (wardName: string) => {
+    if (onWardSelect) {
+      onWardSelect(wardName);
+    } else {
+      // fallback: internal state for places where no callback is passed
+      const found = wardsData.find((w) => w.name === wardName);
+      if (found) setInternalActiveWard(found);
     }
   };
 
-  const googleMapsUrl = `https://www.google.com/maps/@${activeWard.center[0]},${activeWard.center[1]},17z`;
-  const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${activeWard.center[0]},${activeWard.center[1]}`;
-
-  // Until react-leaflet is loaded, show a simple skeleton box
-  if (!leaflet) {
-    return (
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-        <div className="w-full lg:w-3/4 max-w-3xl mx-auto">
-          <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border-4 border-[#2B27AB] bg-gray-100 animate-pulse flex items-center justify-center text-xs text-gray-500">
-            Loading interactive map…
-          </div>
-        </div>
-        <div className="w-full lg:w-1/4 max-w-md mx-auto lg:mx-0 p-5 sm:p-6 bg-gray-50 rounded-xl shadow-lg border border-gray-200">
-          <h3 className="text-lg sm:text-xl font-bold text-[#2B27AB] border-b pb-2 mb-4">
-            Ward Focus (2025–2030)
-          </h3>
-          <p className="text-sm text-gray-600">
-            Preparing live satellite map & Wi-Fi plan…
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Destructure components from react-leaflet AFTER it's loaded
-  const {
-    MapContainer,
-    TileLayer,
-    Marker,
-    CircleMarker,
-    Popup,
-    useMap,
-  } = leaflet;
-
-  // Nested component so we can use useMap safely
-  const FlyToWard: React.FC<{ ward: Ward }> = ({ ward }) => {
-    const map = useMap();
-    useEffect(() => {
-      map.flyTo(ward.center, ward.zoom, {
-        duration: 1.0,
-      });
-    }, [map, ward]);
-    return null;
-  };
+  const defaultCenter: [number, number] = [-1.219, 36.882];
+  const defaultZoom = 13;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-      {/* LEFT: Map + controls */}
-      <div className="w-full lg:w-3/4 max-w-3xl mx-auto">
-        {/* Top controls: search + layer toggle */}
-        <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* Search */}
-          <div className="w-full sm:w-2/3 flex gap-2">
-            <input
-              type="text"
-              placeholder="Search your hood (TRM, Seasons, Githurai 44, Zimmerman, Kahawa…)"
-              className="flex-1 rounded-full border border-gray-300 px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#2B27AB] focus:border-[#2B27AB]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={handleSearchKey}
-            />
-            <button
-              type="button"
-              onClick={() => void handleLocate()}
-              className="whitespace-nowrap rounded-full bg-[#2B27AB] px-4 py-2 text-xs sm:text-sm font-semibold text.white shadow-md hover:bg-[#221f84] transition"
-            >
-              Locate
-            </button>
-          </div>
+    <div className="w-full h-full">
+      <MapContainer
+        center={activeWardData.center || defaultCenter}
+        zoom={activeWardData.zoom || defaultZoom}
+        style={{ height: "500px", width: "100%" }}
+      >
+        <TileLayer
+          attribution='&copy; OpenStreetMap contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
-          {/* Base layer toggle: Streets vs Satellite */}
-          <div className="flex justify-center sm:justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setBaseLayer("streets")}
-              className={`px-3 py-1 rounded-full text-[10px] sm:text-xs border font-semibold transition ${
-                baseLayer === "streets"
-                  ? "bg-[#2B27AB] text-white border-[#2B27AB]"
-                  : "bg-white text-[#2B27AB] border-[#2B27AB]/50 hover:bg-[#2B27AB]/10"
-              }`}
-            >
-              Streets
-            </button>
-            <button
-              type="button"
-              onClick={() => setBaseLayer("satellite")}
-              className={`px-3 py-1 rounded-full text-[10px] sm:text-xs border font-semibold transition ${
-                baseLayer === "satellite"
-                  ? "bg-[#2B27AB] text-white border-[#2B27AB]"
-                  : "bg-white text-[#2B27AB] border-[#2B27AB]/50 hover:bg-[#2B27AB]/10"
-              }`}
-            >
-              Satellite
-            </button>
-          </div>
-        </div>
-
-        {/* Status line */}
-        {searchStatus && (
-          <p className="mb-2 text-[11px] sm:text-xs text-gray-600">
-            {searchStatus}
-          </p>
+        {/* Fly when active ward changes */}
+        {activeWardData && (
+          <FlyToWard center={activeWardData.center} zoom={activeWardData.zoom} />
         )}
 
-        <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border-4 border-[#2B27AB] bg-gray-100">
-          <MapContainer
-            center={activeWard.center}
-            zoom={activeWard.zoom}
-            scrollWheelZoom={true}
-            whenCreated={setMapInstance}
-            className="absolute inset-0"
+        {/* One marker per ward */}
+        {wardsData.map((ward) => (
+          <CircleMarker
+            key={ward.name}
+            center={ward.center}
+            radius={10}
+            pathOptions={{
+              color:
+                ward.name === effectiveActiveWardName ? "#22c55e" : "#2563eb", // green if active
+            }}
+            eventHandlers={{
+              click: () => handleSelect(ward.name),
+            }}
           >
-            {/* Base layer switch – Streets vs Satellite */}
-            {baseLayer === "streets" ? (
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-            ) : (
-              <TileLayer
-                attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              />
-            )}
+            <Popup>
+              <div>
+                <strong>{ward.name}</strong>
+                <p className="text-xs">{ward.stats}</p>
+                <button
+                  onClick={() => handleSelect(ward.name)}
+                  className="mt-2 px-2 py-1 text-xs rounded bg-black text-white"
+                >
+                  Take poll for {ward.name}
+                </button>
+              </div>
+            </Popup>
+          </CircleMarker>
+        ))}
+      </MapContainer>
 
-            {/* Smooth fly when ward changes */}
-            <FlyToWard ward={activeWard} />
-
-            {/* Ward center markers */}
-            {wardsData.map((ward) => (
-              <Marker key={ward.name} position={ward.center} />
-            ))}
-
-            {/* Polling sites / Wi-Fi hubs */}
-            {pollingSites
-              .filter((site) => site.ward === activeWard.name)
-              .map((site) => {
-                const lat = site.lat ?? activeWard.center[0];
-                const lng = site.lng ?? activeWard.center[1];
-
-                const color =
-                  site.wifiPhase === 1
-                    ? "#EF4444"
-                    : site.wifiPhase === 2
-                    ? "#F59E0B"
-                    : "#22C55E";
-
-                return (
-                  <CircleMarker
-                    key={site.name}
-                    center={[lat, lng]}
-                    radius={8}
-                    pathOptions={{
-                      color,
-                      fillColor: color,
-                      fillOpacity: 0.9,
-                      weight: 2,
-                    }}
-                  >
-                    <Popup>
-                      <div className="text-xs">
-                        <div className="font-semibold">{site.name}</div>
-                        <div className="text-[10px] text-gray-600">
-                          Ward: {site.ward}
-                        </div>
-                        <div className="mt-1">
-                          <span className="font-semibold">Wi-Fi Phase: </span>
-                          {site.wifiPhase === 1
-                            ? "Phase 1 – Pilot / high priority"
-                            : site.wifiPhase === 2
-                            ? "Phase 2 – Expansion"
-                            : "Phase 3 – Later rollout"}
-                        </div>
-                        <div className="text-[10px] mt-1">
-                          Type:{" "}
-                          {site.type === "ground"
-                            ? "Field / Ground"
-                            : site.type}
-                        </div>
-                        {site.lat === undefined && site.lng === undefined && (
-                          <div className="text-[9px] text-orange-600 mt-1">
-                            Approximate location (using ward center). GPS to be
-                            refined.
-                          </div>
-                        )}
-                      </div>
-                    </Popup>
-                  </CircleMarker>
-                );
-              })}
-
-            {/* Search hit marker */}
-            {searchLocation && (
-              <CircleMarker
-                center={[searchLocation.lat, searchLocation.lng]}
-                radius={8}
-                pathOptions={{
-                  color: "#FF5722",
-                  fillColor: "#FF5722",
-                  fillOpacity: 0.85,
-                  weight: 2,
-                }}
-              >
-                <Popup>
-                  <div className="text-xs">
-                    <div className="font-semibold">
-                      {searchLocation.label ?? "Search location"}
-                    </div>
-                    <div className="text-[10px] text-gray-600 mt-1">
-                      Zoomed to live map result (Nairobi/Roysambu area).
-                    </div>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            )}
-          </MapContainer>
-
-          {/* Overlay helper text */}
-          <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify.center">
-            <span className="inline-flex items-center rounded-full bg-black/45 px-3 py-1 text-[10px] sm:text-xs text-white font-medium">
-              Pinch, zoom, and use search + ward buttons to explore the plan
-              for your exact area.
-            </span>
-          </div>
-        </div>
-
-        {/* Ward chips BELOW the map — touch-friendly */}
-        <div className="mt-4 flex flex-wrap gap-2 justify-center">
-          {wardsData.map((ward) => (
-            <button
-              key={ward.name}
-              type="button"
-              onClick={() => {
-                setActiveWard(ward);
-                setSearchLocation(null);
-                setSearchStatus(`Showing: ${ward.name}`);
-              }}
-              className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold border transition
-                ${
-                  activeWard.name === ward.name
-                    ? "bg-[#2B27AB] text-white border-[#2B27AB]"
-                    : "bg-white text-[#2B27AB] border-[#2B27AB]/50 hover:bg-[#2B27AB]/10"
-                }`}
-            >
-              {ward.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* RIGHT: Data Panel */}
-      <div className="w.full lg:w-1/4 max-w-md mx-auto lg:mx-0 p-5 sm:p-6 bg-gray-50 rounded-xl shadow-lg border border-gray-200">
-        <h3 className="text-lg sm:text-xl font.bold text-[#2B27AB] border-b pb-2 mb-4">
-          Ward Focus (2025–2030)
-        </h3>
-
-        <p className="text-base font-semibold text.gray-800">
-          {activeWard.name}
-        </p>
-        <p className="mt-2 text-sm text-gray-700">
-          <span className="font-medium">Primary Focus: </span>
-          {activeWard.stats}
-        </p>
-
-        <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
-          <h4 className="text-sm font-bold text-gray-700">
-            5-Year Development Direction
-          </h4>
-          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-            {activeWard.focus}
-          </p>
-
-          <div className="pt-3 border-t border-dashed border-gray-300 space-y-1">
-            <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-              Quick Impact Targets
-            </h5>
-            <ul className="text-[11px] sm:text-xs text-gray-600 space-y-1">
-              <li>• Youth jobs & TVET/digital training opportunities</li>
-              <li>• Essential services closer to estates & courts</li>
-              <li>• Cleaner, safer, and greener neighborhoods</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Wi-Fi roll-out summary */}
-        <div className="mt-5 pt-4 border-t border-gray-200 space-y-2">
-          <h4 className="text-sm font-bold text-gray-700">
-            Free Wi-Fi Plan – {activeWard.name}
-          </h4>
-          <p className="text-xs sm:text-sm text-gray-600">
-            Polling / community sites in this ward:{" "}
-            <span className="font-semibold">{wardSites.length}</span>
-          </p>
-          <ul className="text-xs text-gray-600 space-y-1">
-            <li>
-              <span className="inline-block w-2 h-2 rounded-full bg-[#EF4444] mr-2" />
-              Phase 1 (Pilot): {phase1Count} sites
-            </li>
-            <li>
-              <span className="inline-block w-2 h-2 rounded-full bg-[#F59E0B] mr-2" />
-              Phase 2: {phase2Count} sites
-            </li>
-            <li>
-              <span className="inline-block w-2 h-2 rounded-full bg-[#22C55E] mr-2" />
-              Phase 3: {phase3Count} sites
-            </li>
-          </ul>
-          <p className="text-[10px] text-gray-500 mt-1">
-            Data source: IEBC polling stations via AfroData (CC BY 4.0).
-          </p>
-        </div>
-
-        <div className="mt-4 rounded-lg bg-[#2B27AB]/5 px-3 py-2 text-[11px] sm:text-xs text-gray-700">
-          <span className="font-semibold text-[#2B27AB]">Note: </span>
-          These are priority directions for planning and consultation. Final
-          projects will be co-created with residents, youth groups, churches,
-          and local businesses in each ward.
-        </div>
-
-        {/* External map links */}
-        <div className="mt-4 flex flex-col gap-2">
-          <a
-            href={googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs sm:text-sm font-semibold text-white bg-[#2B27AB] rounded-full px-4 py-2 text-center hover:bg-[#221f84] transition"
+      {/* Optional: clickable ward cards below the map */}
+      <div className="mt-3 grid gap-2">
+        {wardsData.map((ward) => (
+          <button
+            key={ward.name}
+            onClick={() => handleSelect(ward.name)}
+            className={`w-full text-left px-3 py-2 rounded border ${
+              ward.name === effectiveActiveWardName
+                ? "border-black bg-gray-100"
+                : "border-gray-300"
+            }`}
           >
-            Open {activeWard.name} in Google Maps
-          </a>
-          <a
-            href={streetViewUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs sm:text-sm font-semibold text-[#2B27AB] bg-white border border-[#2B27AB] rounded-full px-4 py-2 text-center hover:bg-[#2B27AB]/5 transition"
-          >
-            Street View for this ward
-          </a>
-        </div>
+            <div className="font-semibold text-sm">{ward.name}</div>
+            <div className="text-xs text-gray-600">{ward.focus}</div>
+          </button>
+        ))}
       </div>
     </div>
   );
 };
 
+// default export so existing pages importing `WardMap` as default still work
 export default WardMap;
