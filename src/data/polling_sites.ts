@@ -1,5 +1,4 @@
 // src/data/polling_sites.ts
-
 export type WifiPhase = 1 | 2 | 3;
 // 1 = Pilot / highest priority
 // 2 = Phase 2 rollout
@@ -7,9 +6,12 @@ export type WifiPhase = 1 | 2 | 3;
 
 export type PollingSite = {
   name: string;
+  id?: string;
   ward: string; // must match your Ward.name in WardMap
   type: "school" | "church" | "ground" | "estate" | "other";
   wifiPhase: WifiPhase;
+  description?: string;
+  position?: [number, number];      // [lat, lng]
   // Coordinates are optional – add as you collect them.
   lat?: number;
   lng?: number;

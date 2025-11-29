@@ -1,4 +1,4 @@
-// @ts-nocheck
+// src/components/WardMap.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -14,6 +14,16 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
+// 🔑 Critical: Fix Leaflet default icon in production (Vercel)
+import L from "leaflet";
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+// ✅ Ensure this file exists: src/data/polling_sites.ts
 import { pollingSites } from "../data/polling_sites";
 
 type Ward = {
@@ -92,7 +102,6 @@ export const WardMap: React.FC<WardMapProps> = ({
   );
 
   const effectiveActiveWardName = activeWard || internalActiveWard.name;
-
   const activeWardData =
     wardsData.find((w) => w.name === effectiveActiveWardName) || wardsData[0];
 
@@ -109,115 +118,144 @@ export const WardMap: React.FC<WardMapProps> = ({
   const defaultZoom = 13;
 
   return (
-    <div className="w-full h-full">
-      <MapContainer
-        center={activeWardData.center || defaultCenter}
-        zoom={activeWardData.zoom || defaultZoom}
-        style={{ height: "420px", width: "100%" }}
-        className="rounded-xl overflow-hidden shadow-md"
-      >
-        <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Streets">
-            <TileLayer
-              attribution='&copy; OpenStreetMap contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-          </LayersControl.BaseLayer>
+    <div className="w-full">
+      {/* Map Container */}
+      <div className="rounded-xl overflow-hidden shadow-md mb-4">
+        <MapContainer
+          center={activeWardData.center}
+          zoom={activeWardData.zoom}
+          style={{ height: "420px", width: "100%" }}
+        >
+          <LayersControl position="topright">
+            {/* Base Layers */}
+            <LayersControl.BaseLayer checked name="Streets">
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+            </LayersControl.BaseLayer>
 
-          <LayersControl.BaseLayer name="Satellite">
-            <TileLayer
-              attribution='Imagery © Mapbox, Maxar, Esri'
-              url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
-            />
-            {/* You can swap to a true satellite provider later (Mapbox, etc.) */}
-          </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Humanitarian">
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="https://www.hotosm.org/">HOT</a>'
+                url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
+              />
+            </LayersControl.BaseLayer>
 
-          {/* Wards layer */}
-          <LayersControl.Overlay checked name="Wards">
-            <LayerGroup>
-              {activeWardData && (
-                <FlyToWard
-                  center={activeWardData.center}
-                  zoom={activeWardData.zoom}
-                />
-              )}
-              {wardsData.map((ward) => (
-                <CircleMarker
-                  key={ward.name}
-                  center={ward.center}
-                  radius={ward.name === effectiveActiveWardName ? 12 : 8}
-                  pathOptions={{
-                    color:
-                      ward.name === effectiveActiveWardName
-                        ? "#22c55e"
-                        : "#2563eb",
-                    fillOpacity: 0.8,
-                  }}
-                  eventHandlers={{
-                    click: () => handleSelect(ward.name),
-                  }}
-                >
-                  <Popup>
-                    <div className="text-xs">
-                      <strong>{ward.name}</strong>
-                      <p className="mt-1">{ward.stats}</p>
-                      <p className="mt-1 text-[11px] text-gray-600">
-                        {ward.focus}
-                      </p>
-                      <button
-                        onClick={() => handleSelect(ward.name)}
-                        className="mt-2 px-2 py-1 text-[11px] rounded bg-black text-white"
-                      >
-                        Take poll for {ward.name}
-                      </button>
-                    </div>
-                  </Popup>
-                </CircleMarker>
-              ))}
-            </LayerGroup>
-          </LayersControl.Overlay>
-
-          {/* Polling sites layer */}
-          <LayersControl.Overlay checked name="Polling Sites / Hotspots">
-            <LayerGroup>
-              {pollingSites.map((site: any) => (
-                <Marker key={site.id} position={site.position}>
-                  <Popup>
-                    <div className="text-xs">
-                      <strong>{site.name}</strong>
-                      {site.ward && (
-                        <p className="mt-1">
-                          Ward: <span className="font-semibold">{site.ward}</span>
+            {/* Wards Layer */}
+            <LayersControl.Overlay checked name="Wards">
+              <LayerGroup>
+                {<FlyToWard center={activeWardData.center} zoom={activeWardData.zoom} />}
+                {wardsData.map((ward) => (
+                  <CircleMarker
+                    key={ward.name}
+                    center={ward.center}
+                    radius={ward.name === effectiveActiveWardName ? 12 : 8}
+                    pathOptions={{
+                      color:
+                        ward.name === effectiveActiveWardName
+                          ? "#22c55e" // emerald-500
+                          : "#2563eb", // blue-600
+                      fillOpacity: 0.8,
+                      weight: 2,
+                    }}
+                    eventHandlers={{
+                      click: () => handleSelect(ward.name),
+                    }}
+                  >
+                    <Popup>
+                      <div className="max-w-xs text-sm">
+                        <strong className="text-gray-900">{ward.name}</strong>
+                        <p className="mt-1 text-gray-700">{ward.stats}</p>
+                        <p className="mt-2 text-xs text-gray-600 italic">
+                          {ward.focus}
                         </p>
-                      )}
-                      {site.description && (
-                        <p className="mt-1 text-[11px] text-gray-600">
-                          {site.description}
-                        </p>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </LayerGroup>
-          </LayersControl.Overlay>
-        </LayersControl>
-      </MapContainer>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelect(ward.name);
+                          }}
+                          className="mt-2 px-3 py-1.5 text-xs font-medium bg-[#2B27AB] text-white rounded hover:bg-[#25218d] transition"
+                        >
+                          Focus on {ward.name}
+                        </button>
+                      </div>
+                    </Popup>
+                  </CircleMarker>
+                ))}
+              </LayerGroup>
+            </LayersControl.Overlay>
 
-      {/* Ward cards – mobile friendly quick jump */}
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {/* Polling Sites Layer */}
+            <LayersControl.Overlay checked name="Polling Sites">
+              <LayerGroup>
+                {pollingSites.map((site) => {
+                  let latLng: [number, number] | null = null;
+
+                  if (
+                    Array.isArray(site.position) &&
+                    site.position.length === 2 &&
+                    typeof site.position[0] === "number" &&
+                    typeof site.position[1] === "number"
+                  ) {
+                    latLng = [site.position[0], site.position[1]];
+                  } else if (
+                    typeof site.lat === "number" &&
+                    typeof site.lng === "number"
+                  ) {
+                    latLng = [site.lat, site.lng];
+                  }
+
+                  if (!latLng) {
+                    console.warn("Invalid coordinates for polling site:", site);
+                    return null;
+                  }
+
+                  return (
+                    <Marker
+                      key={site.id || `${latLng[0]}-${latLng[1]}`}
+                      position={latLng}
+                    >
+                      <Popup>
+                        <div className="text-sm max-w-xs">
+                          <strong>{site.name || "Polling Site"}</strong>
+                          {site.ward && (
+                            <p className="mt-1">
+                              <span className="font-medium">Ward:</span> {site.ward}
+                            </p>
+                          )}
+                          {site.description && (
+                            <p className="mt-1 text-gray-600 text-xs">
+                              {site.description}
+                            </p>
+                          )}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
+              </LayerGroup>
+            </LayersControl.Overlay>
+          </LayersControl>
+        </MapContainer>
+      </div>
+
+      {/* Ward Quick-Select Cards (Mobile-Friendly) */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {wardsData.map((ward) => (
           <button
             key={ward.name}
             onClick={() => handleSelect(ward.name)}
-            className={`w-full text-left px-3 py-2 rounded-lg border text-sm ${
+            className={`p-4 text-left rounded-xl border transition-all ${
               ward.name === effectiveActiveWardName
-                ? "border-emerald-600 bg-emerald-50"
-                : "border-gray-300 bg-white"
+                ? "border-[#2B27AB] bg-[#2B27AB]/5 shadow-sm"
+                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
             }`}
           >
-            <div className="font-semibold text-gray-800">{ward.name}</div>
-            <div className="text-[11px] text-gray-600">{ward.focus}</div>
+            <div className="font-bold text-gray-800">{ward.name}</div>
+            <div className="mt-2 text-sm text-gray-600 line-clamp-2">
+              {ward.stats}
+            </div>
           </button>
         ))}
       </div>

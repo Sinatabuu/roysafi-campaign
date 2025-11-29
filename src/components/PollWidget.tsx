@@ -44,20 +44,20 @@ const PollWidget: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const fetchPoll = async () => {
-      try {
-        const res = await fetch("/api/poll");
-        const json: PollResponse = await res.json();
-        setData(json);
-      } catch (err) {
-        console.error("Fetch poll error:", err);
-        setError("Failed to load poll.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPoll();
-  }, []);
+  const fetchPoll = async () => {
+    try {
+      const res = await fetch("/api/poll"); // ✅ Uncommented
+      const json: PollResponse = await res.json(); // ✅ Now `res` exists
+      setData(json);
+    } catch (err) {
+      console.error("Fetch poll error:", err);
+      setError("Failed to load poll.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchPoll();
+}, []);
 
   const totalVotes =
     data?.poll?.results.reduce((sum, r) => sum + r.votes, 0) ?? 0;
