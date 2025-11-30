@@ -76,7 +76,7 @@ export function AskRoySafiWidget() {
         {
           role: "assistant",
           content:
-            "Samahani, kuna shida kidogo na mfumo wa RoySafi. Jaribu tena baada ya muda kidogo.",
+            "Sorry, there was an error processing your request. Please try again later.",
         },
       ]);
     } finally {
