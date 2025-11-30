@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import RoysambuPoll from "../../components/RoysambuPoll";
-import AskRoySafiWidget from "../../components/AskRoySafiWidget";
+import { AskRoySafiWidget } from "../../components/AskRoySafiWidget";
 
 
 const WardMap = dynamic(

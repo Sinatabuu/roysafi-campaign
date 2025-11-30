@@ -1,117 +1,143 @@
-// src/components/AskRoySafiWidget.tsx
 "use client";
 
 import React, { useState } from "react";
 
-const wards = [
-  "Roysambu Ward",
-  "Githurai Ward",
-  "Zimmerman Ward",
-  "Kahawa West Ward",
-  "Kahawa Ward",
-];
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
 
-export default function AskRoySafiWidget() {
-  const [question, setQuestion] = useState("");
-  const [ward, setWard] = useState<string | "">(wards[0]);
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+function buildPrompt(history: ChatMessage[], newUserInput: string): string {
+  const lines: string[] = [];
 
-  const handleAsk = async () => {
-    setErrorMsg(null);
-    setAnswer(null);
-
-    const trimmed = question.trim();
-    if (!trimmed) {
-      setErrorMsg("Please type a question first.");
-      return;
+  for (const msg of history) {
+    if (msg.role === "user") {
+      lines.push(`Resident: ${msg.content}`);
+    } else {
+      lines.push(`RoySafi: ${msg.content}`);
     }
+  }
 
+  // add the new user message
+  lines.push(`Resident: ${newUserInput}`);
+
+  // small hint to the model
+  lines.push(
+    "Please answer as RoySafi, continuing this conversation in a helpful, practical way for Roysambu."
+  );
+
+  return lines.join("\n");
+}
+
+export function AskRoySafiWidget() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed || loading) return;
+
+    // add user message to local state
+    const userMsg: ChatMessage = { role: "user", content: trimmed };
+    const history = [...messages, userMsg];
+    setMessages(history);
+    setInput("");
     setLoading(true);
+
     try {
+      // build FULL prompt from history + new user message
+      const question = buildPrompt(messages, trimmed);
+
       const res = await fetch("/api/ai/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed, ward }),
+        body: JSON.stringify({ question }),
       });
 
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        setErrorMsg(data.error || "Something went wrong. Try again.");
-      } else {
-        setAnswer(data.answer);
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Ask RoySafi error:", res.status, text);
+        throw new Error(`Server returned ${res.status}`);
       }
+
+      const data = await res.json();
+      const reply: ChatMessage = {
+        role: "assistant",
+        content: data.answer ?? "Samahani, sina jibu sahihi sasa hivi.",
+      };
+
+      setMessages((prev) => [...prev, reply]);
     } catch (err) {
       console.error(err);
-      setErrorMsg("Network error. Check your connection.");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Samahani, kuna shida kidogo na mfumo wa RoySafi. Jaribu tena baada ya muda kidogo.",
+        },
+      ]);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-4 space-y-3">
-      <h2 className="text-sm font-semibold text-[#2B27AB]">
-        Ask RoySafi about your ward
-      </h2>
-      <p className="text-xs text-slate-600">
-        Ask about roads, drainage, youth jobs, Wi-Fi, schools, markets or
-        safety. The AI will answer in simple language – no politics, just
-        development.
-      </p>
-
-      <div className="flex flex-col gap-2">
-        <label className="text-[11px] font-medium text-slate-700">
-          Ward (optional but helps the answer)
-        </label>
-        <select
-          value={ward}
-          onChange={(e) => setWard(e.target.value)}
-          className="text-xs rounded-lg border border-slate-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        >
-          {wards.map((w) => (
-            <option key={w} value={w}>
-              {w}
-            </option>
-          ))}
-          <option value="">Not sure / general</option>
-        </select>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label className="text-[11px] font-medium text-slate-700">
-          Your question
-        </label>
-        <textarea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          rows={3}
-          className="w-full text-xs rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          placeholder="E.g. Why is drainage so bad near TRM, and what can be done in the next 5 years?"
-        />
-      </div>
-
-      <button
-        onClick={handleAsk}
-        disabled={loading}
-        className="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-full bg-emerald-600 text-white text-xs font-semibold shadow hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        {loading ? "Thinking…" : "Ask RoySafi"}
-      </button>
-
-      {errorMsg && (
-        <p className="text-[11px] text-red-600 mt-1">{errorMsg}</p>
-      )}
-
-      {answer && (
-        <div className="mt-2 border-t border-slate-200 pt-2">
-          <p className="text-[11px] font-semibold text-slate-800 mb-1">
-            Answer:
+    <div className="space-y-3">
+      {/* Chat window */}
+      <div className="
+        border rounded 
+        p-2 sm:p-3 
+        h-48 sm:h-64 lg:h-80 
+        overflow-y-auto 
+        bg-white/60 
+        text-xs sm:text-sm lg:text-base
+      ">
+        {messages.length === 0 && (
+          <p className="text-gray-500">
+            Ask RoySafi anything about improving Roysambu.
           </p>
-          <p className="text-xs text-slate-700 whitespace-pre-line">{answer}</p>
-        </div>
-      )}
+        )}
+
+        {messages.map((m, i) => (
+          <div
+            key={i}
+            className={`mb-2 ${
+              m.role === "user" ? "text-right" : "text-left"
+            }`}
+          >
+            <div
+              className={`inline-block px-2 py-1 rounded ${
+                m.role === "user"
+                  ? "bg-green-600 text-white"
+                  : "bg-gray-200 text-gray-900"
+              }`}
+            >
+              {m.content}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Input */}
+      <form onSubmit={handleSend} className="flex gap-2">
+        <input
+          className="flex-1 border rounded px-2 py-1 text-sm"
+          placeholder="Ask RoySafi a question about Roysambu..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          className="px-3 py-1 rounded bg-green-700 text-white text-sm"
+          disabled={loading}
+        >
+          {loading ? "Inafikiria…" : "Tuma"}
+        </button>
+      </form>
     </div>
   );
 }

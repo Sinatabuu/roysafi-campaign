@@ -5,6 +5,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import React, { useState, useEffect } from "react";
 import PollWidget from "../components/PollWidget";
+import { AskRoySafiWidget } from "../components/AskRoySafiWidget";
 
 const WardMap = dynamic(
   () => import("../components/WardMap").then((mod) => mod.WardMap),
@@ -87,7 +88,12 @@ export default function HomePage() {
               >
                 🗳️ Take the Roysambu People’s Poll
               </a>
-
+                          <a
+                href="/donate"
+                className="border-2 border-yellow-300 bg-yellow-300/90 text-[#2B27AB] font-semibold py-3 px-8 rounded-full hover:bg-yellow-300 transition"
+              >
+                Donate to RoySafi
+              </a>
               <a
                 href="/get-involved"
                 className="border-2 border-white text-white font-semibold py-3 px-8 rounded-full hover:bg-white/10 transition"
@@ -180,30 +186,11 @@ export default function HomePage() {
 
         <WardMap />
       </section>
-
-      {/* Community Poll Section */}
-      <section className="pb-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-8 items-start">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#2B27AB] mb-3">
-              Help Set Roysambu’s Priorities
-            </h2>
-            <p className="text-sm sm:text-base text-gray-700">
-              This live community poll helps us understand what matters most in
-              your ward. Your input will guide the 5-year plan for roads, water,
-              free Wi-Fi, youth jobs, and safety in Roysambu Ward, Githurai,
-              Kahawa West, Kahawa, and Zimmerman.
-            </p>
-            <p className="mt-3 text-xs sm:text-sm text-gray-500">
-              We will publish anonymised ward-level summaries so residents can
-              see what their neighbours are saying and how that shapes real
-              projects.
-            </p>
-          </div>
-
-          <PollWidget />
-        </div>
+  
+      <section className="mt-8">
+        <AskRoySafiWidget />
       </section>
+
     </main>
   );
 }
