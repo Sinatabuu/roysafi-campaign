@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import RoysambuPoll from "../../components/RoysambuPoll";
+import AskRoySafiWidget from "../../components/AskRoySafiWidget";
+
 
 const WardMap = dynamic(
   () => import("../../components/WardMap").then((mod) => mod.WardMap),
@@ -47,6 +49,18 @@ export default function RoysambuPage() {
               onWardSelect={(wardName: string) => setActiveWard(wardName)}
             />
           </section>
+          {/* Poll + Ask RoySafi */}
+            <section className="pb-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+              <div className="grid md:grid-cols-2 gap-8 items-start">
+                {/* left: text + poll intro, right: PollWidget */}
+                {/* ...your existing poll section code... */}
+              </div>
+
+              {/* New Ask RoySafi row */}
+              <div className="mt-10">
+                <AskRoySafiWidget />
+              </div>
+            </section>
 
           {/* Poll */}
           <section className="bg-white rounded-2xl shadow-md p-3">
