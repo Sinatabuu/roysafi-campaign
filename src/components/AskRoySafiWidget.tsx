@@ -76,7 +76,7 @@ export function AskRoySafiWidget() {
         {
           role: "assistant",
           content:
-            "Sorry, there was an error processing your request. Please try again later.",
+            "Sorry",
         },
       ]);
     } finally {

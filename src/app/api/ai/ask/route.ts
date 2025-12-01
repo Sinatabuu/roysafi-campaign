@@ -45,6 +45,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // DEBUG: check API key presence
+    const hasKey = !!process.env.OPENAI_API_KEY;
+    if (!hasKey) {
+      console.error("AI route error: OPENAI_API_KEY is missing in this env");
+      return NextResponse.json(
+        {
+          error: "Server misconfigured: missing OPENAI_API_KEY",
+        },
+        { status: 500 }
+      );
+    }
+
     const completion = await openai.chat.completions.create({
   model: "gpt-4.1-mini",
   messages: [
@@ -109,10 +121,54 @@ Make the resident feel heard, empowered, and informed about simple, real steps R
     const answer = completion.choices[0]?.message?.content ?? "No answer.";
 
     return NextResponse.json({ answer });
-  } catch (err: any) {
-    console.error("AI route error:", err);
+  } catch (err: unknown) {
+    const parseError = (e: unknown) => {
+      if (e && typeof e === "object") {
+        const obj = e as Record<string, unknown>;
+        return {
+          message: typeof obj.message === "string" ? obj.message : undefined,
+          status: typeof obj.status === "number" ? obj.status : undefined,
+          code:
+            typeof obj.code === "string" || typeof obj.code === "number"
+              ? obj.code
+              : undefined,
+          responseStatus:
+            obj.response &&
+            typeof obj.response === "object" &&
+            typeof (obj.response as Record<string, unknown>).status === "number"
+              ? ((obj.response as Record<string, unknown>).status as number)
+              : undefined,
+          responseData:
+            obj.response &&
+            typeof obj.response === "object" &&
+            (obj.response as Record<string, unknown>).data !== undefined
+              ? (obj.response as Record<string, unknown>).data
+              : undefined,
+        };
+      }
+      return {};
+    };
+
+    const detailed = parseError(err);
+
+    console.error("AI route error (detailed):", {
+      message: detailed.message,
+      status: detailed.status,
+      code: detailed.code,
+      responseStatus: detailed.responseStatus,
+      responseData: detailed.responseData,
+    });
+
     return NextResponse.json(
-      { error: "Failed to get AI response" },
+      {
+        error: "Failed to get AI response",
+        // TEMP: send some debug info to the browser so YOU can see it
+        debug: {
+          message: detailed.message ?? null,
+          status: detailed.status ?? null,
+          code: detailed.code ?? null,
+        },
+      },
       { status: 500 }
     );
   }
