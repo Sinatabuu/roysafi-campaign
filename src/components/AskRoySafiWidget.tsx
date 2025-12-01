@@ -88,15 +88,16 @@ export function AskRoySafiWidget() {
     <div className="space-y-3">
       {/* Chat window */}
       <div className="
-        border rounded 
-        p-2 sm:p-3 
-        h-48 sm:h-64 lg:h-80 
-        overflow-y-auto 
-        bg-white/60 
-        text-xs sm:text-sm lg:text-base
+      border rounded 
+      p-2 sm:p-3 
+      h-48 sm:h-64 lg:h-80 
+      overflow-y-auto 
+      bg-white text-black 
+      text-xs sm:text-sm lg:text-base
+      mb-6
       ">
         {messages.length === 0 && (
-          <p className="text-gray-500">
+          <p className="text-gray-600">
             Ask RoySafi anything about improving Roysambu.
           </p>
         )}
