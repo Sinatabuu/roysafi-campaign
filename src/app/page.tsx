@@ -6,6 +6,9 @@ import dynamic from "next/dynamic";
 import React, { useState, useEffect } from "react";
 import PollWidget from "../components/PollWidget";
 import { AskRoySafiWidget } from "../components/AskRoySafiWidget";
+import { JobsTeaser } from "../components/JobsTeaser";
+import { ManifestoBanner } from "../components/ManifestoBanner";
+
 
 const WardMap = dynamic(
   () => import("../components/WardMap").then((mod) => mod.WardMap),
@@ -65,11 +68,11 @@ export default function HomePage() {
               A 5-Year Master Plan for Roysambu — youth, jobs, safe estates, and
               dignified living in every ward.
             </p>
-
+            <ManifestoBanner />
             {/* Mini bio line in hero */}
             <p className="mt-3 text-xs sm:text-sm text-white/80 max-w-xl md:max-w-2xl mx-auto md:mx-0">
-              I&apos;m <span className="font-semibold">Sammy Maigwa Karuri</span>, 
-              a community organizer and tech builder. RoySafi is our space to
+              I&apos;m <span className="font-semibold">Sammy Maigwa Karuri</span>, a
+              community organizer and tech builder. RoySafi is our space to
               listen to residents, map real needs, and turn your ideas into
               projects that actually touch the ground.
             </p>
@@ -88,11 +91,11 @@ export default function HomePage() {
               >
                 🗳️ Take the Roysambu People’s Poll
               </a>
-                          <a
-                href="/donate"
-                className="border-2 border-yellow-300 bg-yellow-300/90 text-[#2B27AB] font-semibold py-3 px-8 rounded-full hover:bg-yellow-300 transition"
+              <a
+                href="/jobs"
+                className="inline-flex items-center px-5 py-2.5 rounded-full bg-yellow-600 text-white font-semibold text-sm shadow hover:bg-blue-700 transition"
               >
-                Donate to RoySafi
+                💼 Jobs & Opportunities
               </a>
               <a
                 href="/get-involved"
@@ -129,7 +132,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Mini Bio Strip – 3 angles of who you are / what RoySafi is */}
+      {/* Mini Bio Strip – 3 equal cards (Poll removed from inside) */}
       <section className="bg-gray-50 border-y border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid gap-5 md:grid-cols-3 text-sm">
           <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
@@ -167,30 +170,71 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Map + Ward Focus */}
+      {/* Map + Ask RoySafi + Poll + Jobs in one balanced grid */}
       <section
         id="map"
-        className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto"
+        className="py-16 bg-white border-t border-gray-100 px-4 sm:px-6 lg:px-8"
       >
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-[#2B27AB]">
-            See Your Hood on the Map
-          </h2>
-          <p className="mt-3 text-gray-700 max-w-4xl mx-auto text-sm sm:text-base">
-            Zoom and move around the map to see your estate and neighborhood in
-            Roysambu. Tap a ward button or search TRM, Seasons, Githurai 44,
-            Zimmerman, or Kahawa to explore the 5-year development focus for
-            your area.
-          </p>
+        <div className="max-w-6xl mx-auto grid gap-10 lg:grid-cols-[2fr,1fr] items-start">
+          {/* Left: Map + explainer */}
+          <div>
+            <div className="text-center lg:text-left mb-6">
+              <h2 className="text-3xl font-bold text-[#2B27AB]">
+                See Your Hood on the Map
+              </h2>
+              <p className="mt-3 text-gray-700 max-w-3xl text-sm sm:text-base mx-auto lg:mx-0">
+                Zoom and move around the map to see your estate and neighborhood
+                in Roysambu. Tap a ward button or search TRM, Seasons, Githurai
+                44, Zimmerman, or Kahawa to explore the 5-year development focus
+                for your area.
+              </p>
+            </div>
+
+            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+              <WardMap />
+            </div>
+          </div>
+
+          {/* Right: stacked interaction cards – Ask, Poll, Jobs */}
+          <div className="space-y-5">
+            {/* Ask RoySafi card */}
+            <div className="bg-gray-50 rounded-2xl border border-gray-200 shadow-sm p-4">
+              <h3 className="text-sm font-semibold text-[#2B27AB] mb-2">
+                Ask RoySafi Anything
+              </h3>
+              <p className="text-xs text-gray-700 mb-3">
+                Share a concern, an idea, or a question about your ward. RoySafi
+                helps turn resident feedback into real plans.
+              </p>
+              <AskRoySafiWidget />
+            </div>
+
+            {/* Poll card */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+              <h3 className="text-sm font-semibold text-[#2B27AB] mb-2">
+                Roysambu Live Poll
+              </h3>
+              <p className="text-xs text-gray-700 mb-3">
+                Vote on what matters most right now — roads, security, Wi-Fi,
+                jobs, or clean estates.
+              </p>
+              <PollWidget />
+            </div>
+
+            {/* Jobs teaser card */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+            <h3 className="text-sm font-semibold text-[#2B27AB] mb-2">
+              Jobs & Opportunities Board
+            </h3>
+            <p className="text-xs text-gray-700 mb-3">
+              See local jobs, gigs, and youth opportunities around Roysambu —
+              updated as we grow the network.
+            </p>
+            <JobsTeaser />
+          </div>
+          </div>
         </div>
-
-        <WardMap />
       </section>
-  
-      <section className="mt-8">
-        <AskRoySafiWidget />
-      </section>
-
     </main>
   );
 }

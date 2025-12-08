@@ -4,6 +4,8 @@ import { sql } from "@vercel/postgres";
 
 export const runtime = "nodejs"; // required for Postgres, not Edge
 
+const IS_DEV = process.env.NODE_ENV === "development";
+
 // GET = fetch active poll + aggregated results
 export async function GET() {
   try {
@@ -58,6 +60,37 @@ export async function GET() {
     );
   } catch (err) {
     console.error("GET /api/poll error:", err);
+
+    // 🔹 In development, return a mock poll so UI keeps working
+    if (IS_DEV) {
+      return NextResponse.json(
+        {
+          poll: {
+            id: 0,
+            slug: "dev-poll",
+            question:
+              "In dev mode – which area feels most urgent in your ward?",
+            options: [
+              "Roads & Drainage",
+              "Lights & Safety",
+              "Jobs & Opportunities",
+              "Markets & Business Spaces",
+              "WiFi & Digital Access",
+            ],
+            results: [
+              { option: "Roads & Drainage", votes: 12 },
+              { option: "Lights & Safety", votes: 9 },
+              { option: "Jobs & Opportunities", votes: 15 },
+              { option: "Markets & Business Spaces", votes: 7 },
+              { option: "WiFi & Digital Access", votes: 5 },
+            ],
+          },
+        },
+        { status: 200 }
+      );
+    }
+
+    // 🔹 In production, fail gracefully
     return NextResponse.json(
       { error: "Failed to load poll" },
       { status: 500 }
@@ -85,6 +118,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // In dev, we can short-circuit to avoid DB errors
+    if (IS_DEV) {
+      console.warn(
+        "POST /api/poll in dev mode – ignoring DB write and returning mock ok"
+      );
+      return NextResponse.json({ ok: true, devMock: true }, { status: 201 });
+    }
+
     // get active poll
     const { rows: pollRows } = await sql<{
       id: string;
@@ -105,10 +146,7 @@ export async function POST(req: Request) {
     const poll = pollRows[0];
 
     // validate option index
-    if (
-      choiceIndex < 0 ||
-      choiceIndex >= poll.options.length
-    ) {
+    if (choiceIndex < 0 || choiceIndex >= poll.options.length) {
       return NextResponse.json(
         { error: "Invalid choiceIndex" },
         { status: 400 }

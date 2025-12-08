@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ total: data?.length ?? 0 });
+
   } catch (err: any) {
     console.error(err);
     return NextResponse.json(
