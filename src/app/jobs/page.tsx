@@ -2,24 +2,50 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-// Ensure these imports match your actual file structure
-import { Job, JobType, Ward, PayType } from "@/lib/jobs/types";
-
+// ------------------
+// 🔹 MODE
+// ------------------
 type Mode = "seeker" | "poster";
 
+
+// ------------------
+// 🔹 WORK MODE LABELS
+// ------------------
 const workModeLabels: Record<"onsite" | "remote" | "hybrid", string> = {
   onsite: "On-site",
   remote: "Remote",
   hybrid: "Hybrid",
 };
 
-const wardLabels: Record<Ward, string> = {
+
+// ------------------
+// 🔹 WARD KEYS + LABELS
+// ------------------
+type WardKey =
+  | "roysambu"
+  | "zimmerman"
+  | "githurai"
+  | "kahawa_west"
+  | "clay_city";
+type Ward = WardKey;
+const wardLabels: Record<WardKey, string> = {
   roysambu: "Roysambu",
   zimmerman: "Zimmerman",
   githurai: "Githurai",
   kahawa_west: "Kahawa West",
   clay_city: "Clay City",
 };
+
+
+// ------------------
+// 🔹 JOB TYPES + LABELS
+// ------------------
+type JobType =
+  | "job"
+  | "gig"
+  | "internship"
+  | "training"
+  | "mentorship";
 
 const jobTypeLabels: Record<JobType, string> = {
   job: "Job",
@@ -29,6 +55,17 @@ const jobTypeLabels: Record<JobType, string> = {
   mentorship: "Mentorship",
 };
 
+
+// ------------------
+// 🔹 PAY TYPES + LABELS
+// ------------------
+type PayType =
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "stipend"
+  | "volunteer";
+
 const payTypeLabels: Record<PayType, string> = {
   daily: "Daily",
   weekly: "Weekly",
@@ -36,6 +73,30 @@ const payTypeLabels: Record<PayType, string> = {
   stipend: "Stipend",
   volunteer: "Volunteer",
 };
+
+
+// ------------------
+// 🔹 JOB INTERFACE
+// ------------------
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  ward: WardKey;
+  jobType: JobType;
+  payType?: PayType;
+  location?: string;
+  locationDetail?: string;
+  description?: string;
+  postedAt: string;
+  isActive: boolean;
+  sector?: string;
+  workMode?: "onsite" | "remote" | "hybrid";
+  contactMethod: "whatsapp" | "phone" | "email" | "link";
+  contactValue: string;
+  verified?: boolean;
+}
+
 
 export default function JobsPage() {
   const [mode, setMode] = useState<Mode>("seeker");
@@ -83,9 +144,14 @@ export default function JobsPage() {
       if (!res.ok) throw new Error("Failed to fetch jobs");
       const data = await res.json();
       setJobs(data.jobs || []);
-    } catch (err: any) {
-      console.error(err);
-      setError("Could not load jobs. Please try again.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err);
+        setError("Could not load jobs. Please try again.");
+      } else {
+        console.error("Unknown error", err);
+        setError("Could not load jobs. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -122,14 +188,15 @@ export default function JobsPage() {
         title: "",
         description: "",
         locationDetail: "",
-        sector: "",
-        payRangeMin: "",
-        payRangeMax: "",
-        contactValue: "",
       }));
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Could not submit opportunity.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err);
+        setError(err.message || "Could not submit opportunity.");
+      } else {
+        console.error("Unknown error", err);
+        setError("Could not submit opportunity.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -268,7 +335,7 @@ export default function JobsPage() {
                       </h3>
                       <p className="text-xs text-gray-500">
                         {wardLabels[job.ward]} •{" "}
-                        {jobTypeLabels[job.type]} •{" "}
+                        {jobTypeLabels[job.jobType]} •{" "}
                         {job.sector || "General"}
                       </p>
                     </div>
@@ -276,7 +343,7 @@ export default function JobsPage() {
                     {/* UPDATED RIGHT-HAND STACK */}
                     <div className="flex flex-col items-end gap-1">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] border">
-                        {payTypeLabels[job.payType]}
+                        {job.payType ? payTypeLabels[job.payType] : "N/A"}
                       </span>
 
                       {/* Display Work Mode if available */}
@@ -310,7 +377,7 @@ export default function JobsPage() {
                   )}
 
                   <p className="mt-2 text-xs text-gray-500">
-                    Posted: {new Date(job.createdAt).toLocaleDateString()}
+                    Posted: {new Date(job.postedAt).toLocaleDateString()}
                   </p>
 
                   <div className="mt-3 text-xs">

@@ -1,29 +1,39 @@
 // src/lib/jobs/types.ts
-export type JobType = "job" | "gig" | "internship" | "training" | "mentorship";
-export type PayType = "daily" | "weekly" | "monthly" | "stipend" | "volunteer";
+
 export type Ward =
-  | "roysambu"
-  | "zimmerman"
-  | "githurai"
-  | "kahawa_west"
-  | "clay_city";
+  | "Roysambu"
+  | "Zimmerman"
+  | "Githurai"
+  | "Kahawa West"
+  | "Marurui / Korogocho North"
+  | string;
+
+export type JobType =
+  | "full-time"
+  | "part-time"
+  | "contract"
+  | "internship"
+  | "gig"
+  | string;
+
+export type PayType =
+  | "monthly"
+  | "daily"
+  | "hourly"
+  | "per-trip"
+  | "stipend"
+  | "commission"
+  | string;
 
 export interface Job {
   id: string;
   title: string;
-  type: JobType;
-  description: string;
+  company: string;
   ward: Ward;
-  locationDetail?: string;
-  sector?: string;
-  workMode?: "onsite" | "remote" | "hybrid";
-  payType: PayType;
-  payRangeMin?: number | null;
-  payRangeMax?: number | null;
-  contactMethod: "whatsapp" | "phone" | "email" | "link";
-  contactValue: string;
-  status: "active" | "pending_review" | "expired";
-  verified: boolean;
-  createdAt: string; // ISO string
-  expiresAt?: string | null;
+  jobType: JobType;
+  payType?: PayType;
+  location?: string;
+  description?: string;
+  postedAt: string; // ISO date
+  isActive: boolean;
 }

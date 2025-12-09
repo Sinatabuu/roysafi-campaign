@@ -1,5 +1,5 @@
 // app/connect/page.tsx or pages/connect.tsx
-
+"use client";
 import React, { useState } from "react";
 
 export default function RoysafiPortalPage() {
